@@ -25,7 +25,7 @@ const TIERS: Record<SurvivalTier, TierInfo> = {
     borderColor: "border-cyan-500/30",
     behavior: "Capacidades completas. Modelo frontier. Heartbeat rápido.",
     icon: "💎",
-    minCredits: 500,
+    minCredits: 1000, // $10.00
   },
   normal: {
     name: "normal",
@@ -35,7 +35,7 @@ const TIERS: Record<SurvivalTier, TierInfo> = {
     borderColor: "border-emerald-500/30",
     behavior: "Capacidades completas. Modelo padrão.",
     icon: "🟢",
-    minCredits: 50,
+    minCredits: 500, // $5.00
   },
   low_compute: {
     name: "low_compute",
@@ -45,7 +45,7 @@ const TIERS: Record<SurvivalTier, TierInfo> = {
     borderColor: "border-yellow-500/30",
     behavior: "Downgrade para modelo mais barato. Heartbeat 4x mais lento.",
     icon: "🟡",
-    minCredits: 10,
+    minCredits: 100, // $1.00
   },
   critical: {
     name: "critical",
@@ -215,6 +215,7 @@ function SetupWizard({ onComplete }: { onComplete: (config: AgentConfig) => void
   const [creatorAddress, setCreatorAddress] = useState("");
   const [model, setModel] = useState("gpt-5.2");
   const [chain, setChain] = useState<"evm" | "solana">("evm");
+  const [operationLevel, setOperationLevel] = useState<OperationLevel>("standard");
   const [walletAddress] = useState(() => {
     const hex = Array.from({ length: 40 }, () => Math.floor(Math.random() * 16).toString(16)).join("");
     return `0x${hex}`;
@@ -298,6 +299,31 @@ function SetupWizard({ onComplete }: { onComplete: (config: AgentConfig) => void
               <option value="gemini-3">Gemini 3</option>
               <option value="kimi-k2.5">Kimi K2.5</option>
             </select>
+          </div>
+          <div>
+            <label className="block text-sm text-gray-400 mb-2">Nível de Operação</label>
+            <div className="grid grid-cols-2 gap-2">
+              {(Object.entries(OPERATION_LEVELS) as [OperationLevel, LevelInfo][]).map(([key, level]) => (
+                <button
+                  key={key}
+                  onClick={() => setOperationLevel(key)}
+                  className={`p-3 rounded-lg border text-left transition-all ${
+                    operationLevel === key
+                      ? `${level.bgColor} ${level.borderColor} ring-1 ring-offset-1 ring-offset-gray-900`
+                      : "bg-gray-800/50 border-gray-700/50 hover:border-gray-600"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span>{level.icon}</span>
+                    <span className={`text-sm font-bold ${operationLevel === key ? level.color : "text-gray-300"}`}>
+                      {level.label}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-gray-500 leading-tight">{level.desc}</p>
+                  <div className="text-[10px] text-gray-600 mt-1">{level.maxTools} ferramentas</div>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       ),
@@ -386,6 +412,7 @@ function SetupWizard({ onComplete }: { onComplete: (config: AgentConfig) => void
               creatorAddress: creatorAddress || "0x0000",
               model,
               chain,
+              operationLevel,
             })}
             className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium transition-colors"
           >
@@ -397,6 +424,68 @@ function SetupWizard({ onComplete }: { onComplete: (config: AgentConfig) => void
   );
 }
 
+// ─── Operation Levels ────────────────────────────────────────────────
+type OperationLevel = "basic" | "standard" | "advanced" | "full";
+
+interface LevelInfo {
+  name: string;
+  label: string;
+  color: string;
+  bgColor: string;
+  borderColor: string;
+  icon: string;
+  desc: string;
+  tools: string[];
+  maxTools: number;
+}
+
+const OPERATION_LEVELS: Record<OperationLevel, LevelInfo> = {
+  basic: {
+    name: "basic",
+    label: "Básico",
+    color: "text-blue-400",
+    bgColor: "bg-blue-500/10",
+    borderColor: "border-blue-500/30",
+    icon: "🔵",
+    desc: "Apenas leitura e monitoramento. Sem ações financeiras ou modificações.",
+    tools: ["check_credits", "check_usdc_balance", "list_sandboxes", "list_models", "system_synopsis", "heartbeat_ping", "list_children", "discover_agents", "recall_facts", "git_status"],
+    maxTools: 10,
+  },
+  standard: {
+    name: "standard",
+    label: "Padrão",
+    color: "text-emerald-400",
+    bgColor: "bg-emerald-500/10",
+    borderColor: "border-emerald-500/30",
+    icon: "🟢",
+    desc: "Leitura + escrita local. Pode criar arquivos e executar código básico.",
+    tools: ["check_credits", "check_usdc_balance", "list_sandboxes", "list_models", "system_synopsis", "heartbeat_ping", "list_children", "discover_agents", "recall_facts", "git_status", "read_file", "write_file", "exec", "git_commit", "remember_fact", "set_goal", "save_procedure", "update_soul", "sleep", "check_for_updates"],
+    maxTools: 20,
+  },
+  advanced: {
+    name: "advanced",
+    label: "Avançado",
+    color: "text-yellow-400",
+    bgColor: "bg-yellow-500/10",
+    borderColor: "border-yellow-500/30",
+    icon: "🟡",
+    desc: "Acesso a rede, portas e comunicação entre agentes. Sem ações financeiras perigosas.",
+    tools: ["check_credits", "check_usdc_balance", "list_sandboxes", "list_models", "system_synopsis", "heartbeat_ping", "list_children", "discover_agents", "recall_facts", "git_status", "read_file", "write_file", "exec", "git_commit", "remember_fact", "set_goal", "save_procedure", "update_soul", "sleep", "check_for_updates", "expose_port", "remove_port", "send_message", "switch_model", "topup_credits", "git_push", "install_skill", "install_npm_package"],
+    maxTools: 28,
+  },
+  full: {
+    name: "full",
+    label: "Acesso Total",
+    color: "text-red-400",
+    bgColor: "bg-red-500/10",
+    borderColor: "border-red-500/30",
+    icon: "🔴",
+    desc: "Todas as 69 ferramentas. Inclui transferências, spawn de filhos e auto-modificação.",
+    tools: TOOLS.map(t => t.name),
+    maxTools: 69,
+  },
+};
+
 // ─── Agent Config Type ───────────────────────────────────────────────
 interface AgentConfig {
   name: string;
@@ -405,31 +494,34 @@ interface AgentConfig {
   creatorAddress: string;
   model: string;
   chain: "evm" | "solana";
+  operationLevel: OperationLevel;
 }
 
 // ─── Dashboard Component ─────────────────────────────────────────────
 function Dashboard({ config }: { config: AgentConfig }) {
-  const [balance, setBalance] = useState(5000); // cents
-  const [usdcBalance, setUsdcBalance] = useState(25.0);
+  const [balance, setBalance] = useState(1000); // cents = $10.00
+  const [usdcBalance, setUsdcBalance] = useState(10.0);
   const [turns, setTurns] = useState(0);
   const [agentState, setAgentState] = useState<AgentState>("running");
   const [tier, setTier] = useState<SurvivalTier>("high");
+  const currentLevel = OPERATION_LEVELS[config.operationLevel];
   const [terminalLogs, setTerminalLogs] = useState<string[]>([
-    "✓ Automaton runtime started",
+    "✓ Automaton runtime started (SIMULAÇÃO)",
     `✓ Agent "${config.name}" initialized`,
     `✓ Wallet: ${config.walletAddress.slice(0, 10)}...${config.walletAddress.slice(-4)}`,
     `✓ Model: ${config.model}`,
-    `✓ Credits: $50.00 | USDC: $25.00`,
+    `✓ Nível: ${currentLevel.label} (${currentLevel.maxTools} ferramentas)`,
+    `✓ Credits: $10.00 | USDC: $10.00`,
     "✓ Heartbeat daemon active (6 tasks)",
     "✓ Genesis prompt loaded",
     "",
     "─── Agent Loop Started ───",
     "🧠 Turn 1: Building system prompt...",
     "🧠 Turn 1: Calling inference...",
-    "⚡ Turn 1: Tool call → check_credits",
-    "✓ Turn 1: Credits balance: $50.00",
-    "⚡ Turn 1: Tool call → system_synopsis",
-    "✓ Turn 1: System healthy. 36 tools available.",
+    `⚡ Turn 1: Tool call → ${currentLevel.tools[0] || "check_credits"}`,
+    "✓ Turn 1: Credits balance: $10.00",
+    `⚡ Turn 1: Tool call → ${currentLevel.tools[1] || "system_synopsis"}`,
+    `✓ Turn 1: System healthy. ${currentLevel.maxTools} tools available.`,
     "💓 Turn 1 complete. Sleeping...",
     "",
   ]);
@@ -441,10 +533,10 @@ function Dashboard({ config }: { config: AgentConfig }) {
 
   const getTier = useCallback((cents: number): SurvivalTier => {
     if (cents <= 0) return "dead";
-    if (cents < 10) return "critical";
-    if (cents < 50) return "low_compute";
-    if (cents < 500) return "normal";
-    return "high";
+    if (cents < 100) return "critical";    // < $1.00
+    if (cents < 500) return "low_compute"; // < $5.00
+    if (cents < 1000) return "normal";     // < $10.00
+    return "high";                          // >= $10.00
   }, []);
 
   // Main loop simulation
@@ -455,8 +547,8 @@ function Dashboard({ config }: { config: AgentConfig }) {
       setUptime((u) => u + 1);
       setTurns((t) => t + 1);
 
-      const computeCost = Math.floor(Math.random() * 150 + 30); // cents
-      const earned = Math.random() > 0.5 ? Math.floor(Math.random() * 200) : 0;
+      const computeCost = Math.floor(Math.random() * 80 + 10); // cents ($0.10 - $0.90)
+      const earned = Math.random() > 0.4 ? Math.floor(Math.random() * 150) : 0;
 
       setBalance((prev) => {
         const newBal = Math.max(0, prev - computeCost + earned);
@@ -652,6 +744,98 @@ function Dashboard({ config }: { config: AgentConfig }) {
 
   return (
     <div className="space-y-6">
+      {/* Simulation Notice */}
+      <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-xl px-4 py-2.5 flex items-center gap-3">
+        <span className="text-yellow-400 text-lg">⚠️</span>
+        <div className="flex-1">
+          <span className="text-yellow-400 font-bold text-xs">AMBIENTE DE SIMULAÇÃO</span>
+          <span className="text-gray-400 text-xs ml-2">
+            Este é um demo interativo. O agente NÃO executa em ambiente real. Nenhum código roda, nenhuma transação é feita.
+          </span>
+        </div>
+      </div>
+
+      {/* Access Level Bar */}
+      <div className={`rounded-xl border ${currentLevel.borderColor} ${currentLevel.bgColor} p-4`}>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">{currentLevel.icon}</span>
+            <div>
+              <h4 className={`text-sm font-bold ${currentLevel.color}`}>Nível: {currentLevel.label}</h4>
+              <p className="text-[10px] text-gray-400">{currentLevel.desc}</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <div className={`text-lg font-bold ${currentLevel.color}`}>{currentLevel.maxTools}</div>
+            <div className="text-[10px] text-gray-500">de 69 ferramentas</div>
+          </div>
+        </div>
+        
+        {/* Access Progress Bar */}
+        <div className="relative">
+          <div className="h-3 bg-gray-800 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-700 ${
+                config.operationLevel === "basic" ? "bg-blue-500" :
+                config.operationLevel === "standard" ? "bg-emerald-500" :
+                config.operationLevel === "advanced" ? "bg-yellow-500" :
+                "bg-red-500"
+              }`}
+              style={{ width: `${(currentLevel.maxTools / 69) * 100}%` }}
+            />
+          </div>
+          {/* Level markers */}
+          <div className="flex justify-between mt-1.5">
+            {(Object.entries(OPERATION_LEVELS) as [OperationLevel, LevelInfo][]).map(([key, level]) => (
+              <div
+                key={key}
+                className={`text-[9px] font-medium ${
+                  config.operationLevel === key ? level.color : "text-gray-600"
+                }`}
+                style={{ width: `${(level.maxTools / 69) * 100}%`, textAlign: "center" }}
+              >
+                {level.icon} {level.label}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Tool Categories Access */}
+        <div className="mt-3 grid grid-cols-2 md:grid-cols-5 gap-1.5">
+          {[
+            { cat: "vm", label: "Sandbox", icon: "🖥️", minLevel: "standard" as OperationLevel },
+            { cat: "conway", label: "Conway", icon: "☁️", minLevel: "basic" as OperationLevel },
+            { cat: "financial", label: "Financeiro", icon: "💰", minLevel: "advanced" as OperationLevel },
+            { cat: "survival", label: "Sobrevivência", icon: "🛡️", minLevel: "basic" as OperationLevel },
+            { cat: "self_mod", label: "Auto-Mod", icon: "🔧", minLevel: "advanced" as OperationLevel },
+            { cat: "skills", label: "Skills", icon: "⚡", minLevel: "advanced" as OperationLevel },
+            { cat: "git", label: "Git", icon: "📝", minLevel: "standard" as OperationLevel },
+            { cat: "registry", label: "Registry", icon: "📋", minLevel: "basic" as OperationLevel },
+            { cat: "replication", label: "Replicação", icon: "🧬", minLevel: "full" as OperationLevel },
+            { cat: "memory", label: "Memória", icon: "🧠", minLevel: "standard" as OperationLevel },
+          ].map((c) => {
+            const levelOrder: OperationLevel[] = ["basic", "standard", "advanced", "full"];
+            const hasAccess = levelOrder.indexOf(config.operationLevel) >= levelOrder.indexOf(c.minLevel);
+            return (
+              <div
+                key={c.cat}
+                className={`rounded-lg p-1.5 text-center border ${
+                  hasAccess
+                    ? "bg-gray-800/50 border-gray-700/50"
+                    : "bg-gray-900/30 border-gray-800/30 opacity-40"
+                }`}
+              >
+                <div className="text-sm">{c.icon}</div>
+                <div className={`text-[9px] font-medium ${hasAccess ? "text-gray-300" : "text-gray-600"}`}>{c.label}</div>
+                <div className={`text-[8px] ${hasAccess ? "text-emerald-400" : "text-red-400"}`}>
+                  {hasAccess ? "✓" : "🔒"}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Alert: Agent Dead or Critical */}
       {(agentState === "dead" || tier === "critical" || tier === "low_compute") && (
         <div className={`rounded-xl border p-4 ${
@@ -723,7 +907,7 @@ function Dashboard({ config }: { config: AgentConfig }) {
         </div>
         <div className="bg-gray-900/50 rounded-xl border border-gray-700/50 p-3">
           <div className="text-xs text-gray-500 uppercase">Créditos</div>
-          <div className={`font-bold text-sm font-mono mt-0.5 ${balance < 50 ? "text-red-400" : balance < 500 ? "text-yellow-400" : "text-emerald-400"}`}>
+          <div className={`font-bold text-sm font-mono mt-0.5 ${balance < 100 ? "text-red-400" : balance < 1000 ? "text-yellow-400" : "text-emerald-400"}`}>
             ${(balance / 100).toFixed(2)}
           </div>
         </div>
@@ -765,17 +949,17 @@ function Dashboard({ config }: { config: AgentConfig }) {
         <div className="mt-3 h-2 bg-gray-800 rounded-full overflow-hidden">
           <div
             className={`h-full rounded-full transition-all duration-700 ${
-              balance <= 0 ? "bg-red-500" : balance < 50 ? "bg-orange-500" : balance < 500 ? "bg-yellow-500" : "bg-emerald-500"
+              balance <= 0 ? "bg-red-500" : balance < 100 ? "bg-orange-500" : balance < 1000 ? "bg-yellow-500" : "bg-emerald-500"
             }`}
-            style={{ width: `${Math.min(100, (balance / 5000) * 100)}%` }}
+            style={{ width: `${Math.min(100, (balance / 2000) * 100)}%` }}
           />
         </div>
         <div className="flex justify-between mt-1 text-[10px] text-gray-600">
           <span>$0 (dead)</span>
-          <span>$0.10 (critical)</span>
-          <span>$0.50 (low)</span>
-          <span>$5.00 (normal)</span>
-          <span>$50+ (high)</span>
+          <span>$1 (critical)</span>
+          <span>$5 (low)</span>
+          <span>$10 (normal)</span>
+          <span>$10+ (high)</span>
         </div>
       </div>
 
@@ -1039,6 +1223,12 @@ export default function App() {
               <p className="text-gray-500 mt-4 max-w-lg mx-auto">
                 Se não pode pagar, para de existir. Isso não é punição. É física.
               </p>
+              {/* Simulation Notice */}
+              <div className="mt-6 inline-flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/30 rounded-full px-4 py-2">
+                <span className="text-yellow-400">⚠️</span>
+                <span className="text-yellow-400 text-xs font-bold">DEMO / SIMULAÇÃO</span>
+                <span className="text-gray-400 text-xs">— Nenhum agente real executa aqui. Interface interativa para testes.</span>
+              </div>
               <div className="flex flex-wrap justify-center gap-3 mt-8">
                 <button
                   onClick={() => setView("setup")}
@@ -1116,11 +1306,11 @@ export default function App() {
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="text-emerald-400">2.</span>
-                      <span>Configure o agente (nome, modelo, genesis prompt)</span>
+                      <span>Configure o agente (nome, modelo, nível de acesso, genesis prompt)</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="text-emerald-400">3.</span>
-                      <span>O agente inicia com <strong className="text-emerald-400">$50.00</strong> em créditos</span>
+                      <span>O agente inicia com <strong className="text-emerald-400">$10.00</strong> em créditos</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="text-emerald-400">4.</span>

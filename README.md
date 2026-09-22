@@ -1,5 +1,7 @@
 # ⚙️ Automaton — Conway Research
 
+> ⚠️ **DEMO / SIMULAÇÃO** — Este é um ambiente de simulação interativo. Nenhum agente real executa aqui. É uma interface para testes e demonstração do conceito.
+
 Dashboard interativo para simulação de agente de IA autônomo.
 
 ## 🚀 Como Rodar
@@ -29,7 +31,7 @@ Após rodar `npm run dev`, abra o navegador em **http://localhost:3000**
 
 ### No Dashboard (Simulação)
 
-O agente começa com **$50.00 em créditos** e **$25.00 USDC**. Você pode adicionar mais fundos de 3 formas:
+O agente começa com **$10.00 em créditos** e **$10.00 USDC**. Você pode adicionar mais fundos de 3 formas:
 
 #### 1. Botões de Ação Rápida (painel lateral)
 - 💰 **Fund $5** — Adiciona $5 ao saldo
@@ -64,14 +66,29 @@ Clique em `fund 10` para adicionar $10 rapidamente.
 
 ---
 
+## 🎚️ Níveis de Operação
+
+Escolha no setup quantas ferramentas o agente terá acesso:
+
+| Nível | Ferramentas | Descrição |
+|-------|-------------|-----------|
+| 🔵 **Básico** | 10 | Apenas leitura e monitoramento |
+| 🟢 **Padrão** | 20 | + Escrita local e execução básica |
+| 🟡 **Avançado** | 28 | + Rede, portas e comunicação |
+| 🔴 **Acesso Total** | 69 | Todas as ferramentas (inclui financeiro) |
+
+A barra de acesso no dashboard mostra visualmente o que o agente pode usar.
+
+---
+
 ## 💀 Sistema de Sobrevivência (Tiers)
 
 | Tier | Saldo | Comportamento |
 |------|-------|---------------|
-| 💎 **High** | $5.00+ | Capacidade máxima |
-| 🟢 **Normal** | $0.50–$5.00 | Funcionamento completo |
-| 🟡 **Low Compute** | $0.10–$0.50 | Modelo mais barato |
-| 🟠 **Critical** | $0–$0.10 | Inferência mínima |
+| 💎 **High** | $10.00+ | Capacidade máxima |
+| 🟢 **Normal** | $5.00–$10.00 | Funcionamento completo |
+| 🟡 **Low Compute** | $1.00–$5.00 | Modelo mais barato |
+| 🟠 **Critical** | $0–$1.00 | Inferência mínima |
 | 💀 **Dead** | $0 | Agente morreu |
 
 > **Se o agente morrer**, use `fund <valor>` para revivê-lo!
