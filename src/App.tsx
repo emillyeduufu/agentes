@@ -1,6 +1,17 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import AIHub from "./AIHub";
 import { knowledgeExchange, type Instinct, type DecisionCycle } from "./KnowledgeExchange";
+import { 
+  shadowMode, 
+  edvPipeline, 
+  x402Revenue, 
+  dualSpeedLearning,
+  type ShadowSignal,
+  type EDVTrajectory,
+  type X402Service,
+  type FastMemoryUpdate,
+  type SlowWeightUpdate
+} from "./ImmunologicalSystem";
 
 // ─── Types ───────────────────────────────────────────────────────────
 type SurvivalTier = "high" | "normal" | "low_compute" | "critical" | "dead";
@@ -583,6 +594,7 @@ function Dashboard({ config }: { config: AgentConfig }) {
   });
   const [showKnowledge, setShowKnowledge] = useState(false);
   const [showInstincts, setShowInstincts] = useState(false);
+  const [showImmunological, setShowImmunological] = useState(false);
   const [instincts, setInstincts] = useState<Instinct[]>([]);
   const [kxStats, setKxStats] = useState(knowledgeExchange.getStats());
   const currentLevel = OPERATION_LEVELS[config.operationLevel];
@@ -1328,6 +1340,15 @@ function Dashboard({ config }: { config: AgentConfig }) {
             🧬 {kxStats.instinctsCount}
           </div>
         </button>
+        <button
+          onClick={() => setShowImmunological(true)}
+          className="bg-gradient-to-br from-blue-500/20 to-emerald-500/10 rounded-xl border border-blue-500/30 p-3 hover:from-blue-500/30 hover:to-emerald-500/20 transition-all group"
+        >
+          <div className="text-xs text-gray-400 uppercase group-hover:text-blue-300">Immune</div>
+          <div className="font-bold text-sm mt-0.5 text-blue-400">
+            🛡️ Active
+          </div>
+        </button>
       </div>
 
       {/* Tier + Survival */}
@@ -1795,6 +1816,188 @@ function Dashboard({ config }: { config: AgentConfig }) {
                   <div>
                     <h4 className="text-yellow-400 font-bold mb-2">4. Evolui Continuamente</h4>
                     <p>A base de conhecimento cresce a cada turno. O agente fica mais eficiente e lucrativo com o tempo.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Immunological System Modal */}
+      {showImmunological && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-gray-900 border border-gray-700 rounded-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-gray-900 border-b border-gray-700 p-4 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-white">🛡️ Sistema Imunológico Econômico</h2>
+              <button
+                onClick={() => setShowImmunological(false)}
+                className="text-gray-400 hover:text-white text-2xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Overview Stats */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 border border-blue-500/30 rounded-xl p-4">
+                  <div className="text-xs text-gray-400 uppercase mb-1">Shadow Mode</div>
+                  <div className="text-2xl font-bold text-blue-400">{shadowMode.getSignals().length}</div>
+                  <div className="text-xs text-gray-500 mt-1">Sinais simulados</div>
+                </div>
+                <div className="bg-gradient-to-br from-purple-500/10 to-purple-500/5 border border-purple-500/30 rounded-xl p-4">
+                  <div className="text-xs text-gray-400 uppercase mb-1">EDV Pipeline</div>
+                  <div className="text-2xl font-bold text-purple-400">{edvPipeline.getStats().totalExperiences}</div>
+                  <div className="text-xs text-gray-500 mt-1">Experiências destiladas</div>
+                </div>
+                <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border border-emerald-500/30 rounded-xl p-4">
+                  <div className="text-xs text-gray-400 uppercase mb-1">x402 Revenue</div>
+                  <div className="text-2xl font-bold text-emerald-400">${(x402Revenue.getTotalRevenue() / 100).toFixed(2)}</div>
+                  <div className="text-xs text-gray-500 mt-1">Receita total</div>
+                </div>
+                <div className="bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 border border-yellow-500/30 rounded-xl p-4">
+                  <div className="text-xs text-gray-400 uppercase mb-1">Dual Speed</div>
+                  <div className="text-2xl font-bold text-yellow-400">{dualSpeedLearning.getStats().fastMemoryUpdates}</div>
+                  <div className="text-xs text-gray-500 mt-1">Fast memory updates</div>
+                </div>
+              </div>
+
+              {/* Pilar 1: Shadow Mode */}
+              <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-4">
+                <h3 className="text-lg font-bold text-blue-400 mb-3">🎯 Pilar 1: Shadow Mode — Aprender Sem Arriscar</h3>
+                <p className="text-sm text-gray-400 mb-4">
+                  Sinais exploratórios são simulados a custo zero, capturando resultados contrafactuais para aprendizado.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                  <div className="bg-black/30 rounded-lg p-3">
+                    <div className="text-xs text-gray-500 uppercase">Total Sinais</div>
+                    <div className="text-xl font-bold text-white">{shadowMode.getSignals().length}</div>
+                  </div>
+                  <div className="bg-black/30 rounded-lg p-3">
+                    <div className="text-xs text-gray-500 uppercase">Alta Confiança</div>
+                    <div className="text-xl font-bold text-emerald-400">{shadowMode.getSignals().filter(s => s.confidence === "high").length}</div>
+                  </div>
+                  <div className="bg-black/30 rounded-lg p-3">
+                    <div className="text-xs text-gray-500 uppercase">Custo Economizado</div>
+                    <div className="text-xl font-bold text-blue-400">${(shadowMode.getCounterfactualAnalysis().costSaved / 100).toFixed(2)}</div>
+                  </div>
+                </div>
+                <div className="bg-black/50 rounded-lg p-3 font-mono text-xs text-gray-300">
+                  <div className="text-gray-500"># Exemplo de Shadow Mode</div>
+                  <div><span className="text-blue-400">🔍</span> Sinal exploratório detectado: github_search</div>
+                  <div><span className="text-blue-400">💭</span> Classificação: exploratory (saldo baixo)</div>
+                  <div><span className="text-blue-400">🎭</span> Executando em shadow mode (custo: $0.00)</div>
+                  <div className="text-emerald-400">✓ Simulação: 78% chance de sucesso, receita estimada: $1.50</div>
+                </div>
+              </div>
+
+              {/* Pilar 2: EDV Pipeline */}
+              <div className="bg-purple-500/5 border border-purple-500/20 rounded-xl p-4">
+                <h3 className="text-lg font-bold text-purple-400 mb-3">🛡️ Pilar 2: EDV — Execute-Distill-Verify</h3>
+                <p className="text-sm text-gray-400 mb-4">
+                  Elimina auto-confirmação com papéis especializados: executores, destilador e verificadores.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                  <div className="bg-black/30 rounded-lg p-3">
+                    <div className="text-xs text-gray-500 uppercase">Trajetórias</div>
+                    <div className="text-xl font-bold text-white">{edvPipeline.getStats().totalTrajectories}</div>
+                  </div>
+                  <div className="bg-black/30 rounded-lg p-3">
+                    <div className="text-xs text-gray-500 uppercase">Memória Compartilhada</div>
+                    <div className="text-xl font-bold text-emerald-400">{edvPipeline.getSharedMemory().length}</div>
+                  </div>
+                  <div className="bg-black/30 rounded-lg p-3">
+                    <div className="text-xs text-gray-500 uppercase">Consenso Médio</div>
+                    <div className="text-xl font-bold text-purple-400">{edvPipeline.getStats().averageConsensus.toFixed(0)}%</div>
+                  </div>
+                </div>
+                <div className="bg-black/50 rounded-lg p-3 font-mono text-xs text-gray-300">
+                  <div className="text-gray-500"># Pipeline EDV</div>
+                  <div><span className="text-blue-400">⚡</span> EXECUTE: 5 agentes exploram em paralelo</div>
+                  <div><span className="text-purple-400">🧪</span> DISTILL: Agente destilador extrai padrões</div>
+                  <div><span className="text-emerald-400">✓</span> VERIFY: Consenso aprova experiência (87%)</div>
+                  <div className="text-emerald-400">💡 Nova heurística adicionada à memória compartilhada</div>
+                </div>
+              </div>
+
+              {/* Pilar 3: x402 Revenue */}
+              <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4">
+                <h3 className="text-lg font-bold text-emerald-400 mb-3">💸 Pilar 3: x402 — Receita Real</h3>
+                <p className="text-sm text-gray-400 mb-4">
+                  Micropagamentos via protocolo x402. Agente publica serviços e cobra por uso.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                  <div className="bg-black/30 rounded-lg p-3">
+                    <div className="text-xs text-gray-500 uppercase">Serviços Ativos</div>
+                    <div className="text-xl font-bold text-white">{x402Revenue.getServices().length}</div>
+                  </div>
+                  <div className="bg-black/30 rounded-lg p-3">
+                    <div className="text-xs text-gray-500 uppercase">Chamadas Totais</div>
+                    <div className="text-xl font-bold text-emerald-400">{x402Revenue.getStats().totalCalls}</div>
+                  </div>
+                  <div className="bg-black/30 rounded-lg p-3">
+                    <div className="text-xs text-gray-500 uppercase">Receita Total</div>
+                    <div className="text-xl font-bold text-emerald-400">${(x402Revenue.getTotalRevenue() / 100).toFixed(2)}</div>
+                  </div>
+                </div>
+                <div className="bg-black/50 rounded-lg p-3 font-mono text-xs text-gray-300">
+                  <div className="text-gray-500"># Serviço x402 ativo</div>
+                  <div><span className="text-emerald-400">🌐</span> Endpoint: /api/summarize</div>
+                  <div><span className="text-emerald-400">💰</span> Preço: $0.05 por chamada</div>
+                  <div><span className="text-emerald-400">📊</span> Margem: 45% (acima do mínimo 30%)</div>
+                  <div className="text-emerald-400">✓ 127 chamadas hoje, receita: $6.35</div>
+                </div>
+              </div>
+
+              {/* Pilar 4: Fast Memory / Slow Weights */}
+              <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-4">
+                <h3 className="text-lg font-bold text-yellow-400 mb-3">🧠 Pilar 4: Fast Memory / Slow Weights</h3>
+                <p className="text-sm text-gray-400 mb-4">
+                  Aprendizado em duas velocidades: instintos atualizados continuamente, modelo base ajustado raramente com gates.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                  <div className="bg-black/30 rounded-lg p-3">
+                    <div className="text-xs text-gray-500 uppercase">Fast Memory</div>
+                    <div className="text-xl font-bold text-yellow-400">{dualSpeedLearning.getStats().fastMemoryUpdates}</div>
+                  </div>
+                  <div className="bg-black/30 rounded-lg p-3">
+                    <div className="text-xs text-gray-500 uppercase">Slow Weights</div>
+                    <div className="text-xl font-bold text-white">{dualSpeedLearning.getStats().slowWeightUpdates}</div>
+                  </div>
+                  <div className="bg-black/30 rounded-lg p-3">
+                    <div className="text-xs text-gray-500 uppercase">Model Version</div>
+                    <div className="text-xl font-bold text-yellow-400">{dualSpeedLearning.getStats().currentModelVersion}</div>
+                  </div>
+                </div>
+                <div className="bg-black/50 rounded-lg p-3 font-mono text-xs text-gray-300">
+                  <div className="text-gray-500"># Dual Speed Learning</div>
+                  <div><span className="text-yellow-400">⚡</span> FAST: Instinto atualizado em tempo real</div>
+                  <div><span className="text-yellow-400">🐢</span> SLOW: Novo modelo proposto (v2.1)</div>
+                  <div><span className="text-emerald-400">✓</span> GATE: Validação passou (82% accuracy)</div>
+                  <div className="text-emerald-400">🚀 Modelo v2.1 deployado com sucesso</div>
+                </div>
+              </div>
+
+              {/* System Overview */}
+              <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-xl p-4">
+                <h3 className="text-lg font-bold text-white mb-3">🔄 Loop do Sistema Imunológico</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-400">
+                  <div>
+                    <h4 className="text-blue-400 font-bold mb-2">1. Geração de Sinais</h4>
+                    <p>Agente analisa contexto e gera sinais de ação classificados por confiança.</p>
+                  </div>
+                  <div>
+                    <h4 className="text-emerald-400 font-bold mb-2">2. Execução Dual</h4>
+                    <p>Alta confiança → capital real. Exploratório → shadow mode (custo zero).</p>
+                  </div>
+                  <div>
+                    <h4 className="text-purple-400 font-bold mb-2">3. Pipeline EDV</h4>
+                    <p>Múltiplos agentes executam, destilador extrai padrões, consenso valida.</p>
+                  </div>
+                  <div>
+                    <h4 className="text-yellow-400 font-bold mb-2">4. Aprendizado Dual</h4>
+                    <p>Fast memory atualiza instintos. Slow weights ajusta modelo com gates.</p>
                   </div>
                 </div>
               </div>
