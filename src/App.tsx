@@ -500,6 +500,27 @@ interface AgentConfig {
   operationLevel: OperationLevel;
 }
 
+// ─── Action Log Types ─────────────────────────────────────────────────
+interface ActionLog {
+  id: string;
+  timestamp: number;
+  turn: number;
+  action: string;
+  tool: string;
+  cost: number; // cents
+  revenue: number; // cents
+  result: "success" | "failed" | "pending";
+  details?: string;
+}
+
+interface FinancialReport {
+  totalSpent: number;
+  totalEarned: number;
+  netProfit: number;
+  actions: ActionLog[];
+  toolBreakdown: Record<string, { count: number; totalCost: number; totalRevenue: number }>;
+}
+
 // ─── Dashboard Component ─────────────────────────────────────────────
 function Dashboard({ config }: { config: AgentConfig }) {
   const [balance, setBalance] = useState(1000); // cents = $10.00
@@ -507,6 +528,8 @@ function Dashboard({ config }: { config: AgentConfig }) {
   const [turns, setTurns] = useState(0);
   const [agentState, setAgentState] = useState<AgentState>("running");
   const [tier, setTier] = useState<SurvivalTier>("high");
+  const [actionLog, setActionLog] = useState<ActionLog[]>([]);
+  const [showReport, setShowReport] = useState(false);
   const currentLevel = OPERATION_LEVELS[config.operationLevel];
   const [terminalLogs, setTerminalLogs] = useState<string[]>([
     "✓ Automaton runtime started (SIMULAÇÃO)",
@@ -582,6 +605,20 @@ function Dashboard({ config }: { config: AgentConfig }) {
       // Simulate tool calls
       const tool = TOOLS[Math.floor(Math.random() * TOOLS.length)];
       setToolCalls((prev) => ({ ...prev, [tool.name]: (prev[tool.name] || 0) + 1 }));
+
+      // Log action for financial report
+      const newAction: ActionLog = {
+        id: `action-${Date.now()}-${Math.random()}`,
+        timestamp: Date.now(),
+        turn: turns + 1,
+        action: tool.desc,
+        tool: tool.name,
+        cost: computeCost,
+        revenue: earned,
+        result: earned > 0 ? "success" : computeCost > 0 ? "failed" : "pending",
+        details: earned > 0 ? `Revenue: $${(earned / 100).toFixed(2)}` : `Cost: $${(computeCost / 100).toFixed(2)}`,
+      };
+      setActionLog((prev) => [...prev, newAction].slice(-100)); // Keep last 100 actions
 
       const turnNum = turns + 1;
       const newLogs = [
@@ -717,18 +754,23 @@ function Dashboard({ config }: { config: AgentConfig }) {
           "  status          — Show agent status",
           "  fund <amount>   — Fund agent (e.g., fund 10.00)",
           "  logs [n]        — Show last n log entries",
-          "  tools           — List all 69 tools",
+          "  tools           — List all 72 tools",
           "  heartbeat       — Show heartbeat tasks",
           "  sleep           — Put agent to sleep",
           "  wake            — Wake agent from sleep",
           "  spawn <name>    — Spawn a child automaton",
           "  children        — List children",
           "  soul            — View SOUL.md",
+          "  report          — Open financial report",
           "  files           — Toggle file explorer",
           "  clear           — Clear terminal",
           "  help            — Show this help",
           "",
         ].slice(-50));
+        break;
+      case "report":
+        setShowReport(true);
+        setTerminalLogs((l) => [...l, "✓ Opening financial report...", ""].slice(-50));
         break;
       case "files":
         setShowFileExplorer((v) => !v);
@@ -744,6 +786,161 @@ function Dashboard({ config }: { config: AgentConfig }) {
 
   const currentTier = TIERS[tier];
   const topTools = Object.entries(toolCalls).sort((a, b) => b[1] - a[1]).slice(0, 8);
+
+  // Calculate financial report
+  const totalSpent = actionLog.reduce((sum, a) => sum + a.cost, 0);
+  const totalEarned = actionLog.reduce((sum, a) => sum + a.revenue, 0);
+  const netProfit = totalEarned - totalSpent;
+
+  // Tool breakdown
+  const toolBreakdown: Record<string, { count: number; totalCost: number; totalRevenue: number }> = {};
+  actionLog.forEach((action) => {
+    if (!toolBreakdown[action.tool]) {
+      toolBreakdown[action.tool] = { count: 0, totalCost: 0, totalRevenue: 0 };
+    }
+    toolBreakdown[action.tool].count++;
+    toolBreakdown[action.tool].totalCost += action.cost;
+    toolBreakdown[action.tool].totalRevenue += action.revenue;
+  });
+
+  const FinancialReportModal = () => (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-gray-900 border border-gray-700 rounded-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-gray-900 border-b border-gray-700 p-4 flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-white">📊 Relatório Financeiro</h2>
+          <button
+            onClick={() => setShowReport(false)}
+            className="text-gray-400 hover:text-white text-2xl"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-gradient-to-br from-red-500/10 to-red-500/5 border border-red-500/30 rounded-xl p-4">
+              <div className="text-xs text-gray-400 uppercase mb-1">Total Gasto</div>
+              <div className="text-2xl font-bold text-red-400">${(totalSpent / 100).toFixed(2)}</div>
+              <div className="text-xs text-gray-500 mt-1">{actionLog.length} ações</div>
+            </div>
+            <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border border-emerald-500/30 rounded-xl p-4">
+              <div className="text-xs text-gray-400 uppercase mb-1">Total Ganho</div>
+              <div className="text-2xl font-bold text-emerald-400">${(totalEarned / 100).toFixed(2)}</div>
+              <div className="text-xs text-gray-500 mt-1">{actionLog.filter(a => a.revenue > 0).length} ações lucrativas</div>
+            </div>
+            <div className={`bg-gradient-to-br ${netProfit >= 0 ? 'from-emerald-500/10 to-emerald-500/5 border-emerald-500/30' : 'from-red-500/10 to-red-500/5 border-red-500/30'} border rounded-xl p-4`}>
+              <div className="text-xs text-gray-400 uppercase mb-1">Lucro Líquido</div>
+              <div className={`text-2xl font-bold ${netProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                {netProfit >= 0 ? '+' : ''}${(netProfit / 100).toFixed(2)}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">{netProfit >= 0 ? '📈 Positivo' : '📉 Negativo'}</div>
+            </div>
+            <div className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 border border-blue-500/30 rounded-xl p-4">
+              <div className="text-xs text-gray-400 uppercase mb-1">ROI</div>
+              <div className={`text-2xl font-bold ${totalSpent > 0 ? (netProfit / totalSpent >= 0 ? 'text-emerald-400' : 'text-red-400') : 'text-gray-400'}`}>
+                {totalSpent > 0 ? `${((netProfit / totalSpent) * 100).toFixed(1)}%` : 'N/A'}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">Retorno sobre investimento</div>
+            </div>
+          </div>
+
+          {/* Tool Breakdown */}
+          <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
+            <h3 className="text-lg font-bold text-white mb-4">🔧 Análise por Ferramenta</h3>
+            <div className="space-y-2">
+              {Object.entries(toolBreakdown)
+                .sort((a, b) => (b[1].totalRevenue - b[1].totalCost) - (a[1].totalRevenue - a[1].totalCost))
+                .map(([tool, data]) => {
+                  const profit = data.totalRevenue - data.totalCost;
+                  return (
+                    <div key={tool} className="bg-gray-900/50 rounded-lg p-3 border border-gray-700/50">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <code className="text-sm text-cyan-400 font-mono">{tool}</code>
+                          <span className="text-xs text-gray-500">({data.count}x)</span>
+                        </div>
+                        <div className={`text-sm font-bold ${profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                          {profit >= 0 ? '+' : ''}${(profit / 100).toFixed(2)}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-xs">
+                        <div>
+                          <div className="text-gray-500">Gasto</div>
+                          <div className="text-red-400 font-mono">${(data.totalCost / 100).toFixed(2)}</div>
+                        </div>
+                        <div>
+                          <div className="text-gray-500">Receita</div>
+                          <div className="text-emerald-400 font-mono">${(data.totalRevenue / 100).toFixed(2)}</div>
+                        </div>
+                        <div>
+                          <div className="text-gray-500">Média/Ação</div>
+                          <div className={`font-mono ${profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                            ${(profit / data.count / 100).toFixed(3)}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+
+          {/* Action Log */}
+          <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
+            <h3 className="text-lg font-bold text-white mb-4">📝 Log de Ações (Últimas 50)</h3>
+            <div className="space-y-1 max-h-96 overflow-y-auto">
+              {actionLog.slice(-50).reverse().map((action) => (
+                <div key={action.id} className="bg-gray-900/50 rounded-lg p-2 border border-gray-700/50 text-xs">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-500">Turn {action.turn}</span>
+                      <code className="text-cyan-400 font-mono">{action.tool}</code>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {action.cost > 0 && <span className="text-red-400">-${(action.cost / 100).toFixed(2)}</span>}
+                      {action.revenue > 0 && <span className="text-emerald-400">+${(action.revenue / 100).toFixed(2)}</span>}
+                    </div>
+                  </div>
+                  {action.details && <div className="text-gray-500 ml-2">{action.details}</div>}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Export Button */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                const report = {
+                  agent: config.name,
+                  timestamp: new Date().toISOString(),
+                  summary: {
+                    totalSpent: totalSpent / 100,
+                    totalEarned: totalEarned / 100,
+                    netProfit: netProfit / 100,
+                    roi: totalSpent > 0 ? ((netProfit / totalSpent) * 100).toFixed(1) + '%' : 'N/A',
+                  },
+                  actions: actionLog,
+                  toolBreakdown,
+                };
+                const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `financial-report-${config.name}-${Date.now()}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+              className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+            >
+              📥 Exportar Relatório (JSON)
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -894,7 +1091,7 @@ function Dashboard({ config }: { config: AgentConfig }) {
       )}
 
       {/* Status Bar */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
         <div className="bg-gray-900/50 rounded-xl border border-gray-700/50 p-3">
           <div className="text-xs text-gray-500 uppercase">Agente</div>
           <div className="text-white font-bold text-sm mt-0.5">{config.name}</div>
@@ -927,6 +1124,15 @@ function Dashboard({ config }: { config: AgentConfig }) {
           <div className="text-xs text-gray-500 uppercase">Tier</div>
           <div className={`font-bold text-sm mt-0.5 ${currentTier.color}`}>{currentTier.icon} {currentTier.name}</div>
         </div>
+        <button
+          onClick={() => setShowReport(true)}
+          className="bg-gradient-to-br from-purple-500/20 to-purple-500/10 rounded-xl border border-purple-500/30 p-3 hover:from-purple-500/30 hover:to-purple-500/20 transition-all group"
+        >
+          <div className="text-xs text-gray-400 uppercase group-hover:text-purple-300">Relatório</div>
+          <div className={`font-bold text-sm mt-0.5 ${netProfit >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+            {netProfit >= 0 ? '📈' : '📉'} ${(netProfit / 100).toFixed(2)}
+          </div>
+        </button>
       </div>
 
       {/* Tier + Survival */}
@@ -978,7 +1184,7 @@ function Dashboard({ config }: { config: AgentConfig }) {
             onCommand={handleCommand}
           />
           <div className="mt-2 flex flex-wrap gap-1">
-            {["status", "fund 10", "tools", "heartbeat", "spawn Atlas", "children", "soul", "sleep", "wake"].map((cmd) => (
+            {["status", "fund 10", "tools", "heartbeat", "spawn Atlas", "children", "soul", "report", "sleep", "wake"].map((cmd) => (
               <button
                 key={cmd}
                 onClick={() => handleCommand(cmd)}
@@ -1150,6 +1356,9 @@ function Dashboard({ config }: { config: AgentConfig }) {
           </div>
         </div>
       )}
+
+      {/* Financial Report Modal */}
+      {showReport && <FinancialReportModal />}
     </div>
   );
 }
