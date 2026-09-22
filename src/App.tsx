@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import AIHub from "./AIHub";
 
 // ─── Types ───────────────────────────────────────────────────────────
 type SurvivalTier = "high" | "normal" | "low_compute" | "critical" | "dead";
@@ -967,7 +968,7 @@ function Dashboard({ config }: { config: AgentConfig }) {
 
 // ─── Main App ────────────────────────────────────────────────────────
 export default function App() {
-  const [view, setView] = useState<"landing" | "setup" | "dashboard">("landing");
+  const [view, setView] = useState<"landing" | "setup" | "dashboard" | "ai-hub">("landing");
   const [config, setConfig] = useState<AgentConfig | null>(null);
 
   return (
@@ -983,7 +984,17 @@ export default function App() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {view !== "landing" && (
+            <button
+              onClick={() => setView("ai-hub")}
+              className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                view === "ai-hub"
+                  ? "bg-purple-600 text-white"
+                  : "bg-gray-800 hover:bg-gray-700 text-gray-300"
+              }`}
+            >
+              🔬 AI Hub
+            </button>
+            {view !== "landing" && view !== "ai-hub" && (
               <button
                 onClick={() => setView(view === "setup" ? "landing" : "dashboard")}
                 className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-gray-300 transition-colors"
@@ -1034,6 +1045,12 @@ export default function App() {
                   className="px-8 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-lg font-semibold transition-colors shadow-lg shadow-emerald-500/20"
                 >
                   🚀 Testar Agora
+                </button>
+                <button
+                  onClick={() => setView("ai-hub")}
+                  className="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-lg font-semibold transition-colors shadow-lg shadow-purple-500/20"
+                >
+                  🔬 AI Hub
                 </button>
                 <a
                   href="https://github.com/Conway-Research/automaton"
@@ -1242,6 +1259,11 @@ export default function App() {
         {/* ─── Dashboard ────────────────────────────────────────────── */}
         {view === "dashboard" && config && (
           <Dashboard config={config} />
+        )}
+
+        {/* ─── AI Hub ──────────────────────────────────────────────── */}
+        {view === "ai-hub" && (
+          <AIHub />
         )}
       </main>
 

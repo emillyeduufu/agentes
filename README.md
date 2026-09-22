@@ -78,6 +78,31 @@ Clique em `fund 10` para adicionar $10 rapidamente.
 
 ---
 
+## 🔬 AI Hub — Análise com IAs
+
+O projeto inclui um **AI Hub** integrado para conectar com suas IAs favoritas e analisar o projeto:
+
+### IAs Suportadas
+- 🤖 **Manus** — Execução de código e análise técnica
+- 🎨 **Muse** — Design, UX e estratégia criativa
+- 🧠 **DeepSeek** — Raciocínio profundo e debugging
+
+### Como usar o AI Hub
+1. Clique em **"🔬 AI Hub"** na navbar ou na landing page
+2. Escolha uma das 3 abas:
+   - **🔗 Links para IAs** — Acesse diretamente as IAs
+   - **📝 Prompts Prontos** — Copie prompts otimizados para análise
+   - **📊 Monitor de Estratégia** — Veja em tempo real o que o agente está fazendo
+
+### Prompts Incluídos
+- 📋 Análise Completa do Projeto
+- 💰 Estratégia de Receita
+- 🔍 Code Review & Melhorias
+- 🛡️ Auditoria de Segurança
+- 🎮 Simulação de Sobrevivência
+
+---
+
 ## 🏗️ Tecnologias
 
 - React 18 + TypeScript
