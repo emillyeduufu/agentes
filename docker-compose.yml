@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  automaton:
+    build: .
+    container_name: automaton-agent
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      # Persiste dados do agente
+      - automaton-data:/root/.automaton
+      # Monta logs para acesso externo
+      - ./logs:/root/.automaton/logs
+    ports:
+      # Mapeia portas para acesso externo (opcional)
+      - "3000:3000"
+      - "8080:8080"
+    networks:
+      - automaton-network
+    healthcheck:
+      test: ["CMD", "node", "packages/cli/dist/index.js", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Opcional: Dashboard web
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    container_name: automaton-dashboard
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=production
+    networks:
+      - automaton-network
+    depends_on:
+      - automaton
+
+volumes:
+  automaton-data:
+    driver: local
+
+networks:
+  automaton-network:
+    driver: bridge

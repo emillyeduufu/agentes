@@ -1,6 +1,113 @@
 # ⚙️ Automaton — Conway Research
 
-> ⚠️ **DEMO / SIMULAÇÃO** — Este é um ambiente de simulação interativo. Nenhum agente real executa aqui. É uma interface para testes e demonstração do conceito.
+> 🚀 **AGENTE REAL** — Este projeto inclui tanto um dashboard de simulação quanto instruções completas para executar o agente de IA real da Conway Research.
+
+## 📦 O que este projeto inclui
+
+1. **Dashboard Interativo** (simulação) - Interface visual para testar conceitos
+2. **Guia Completo** para executar o agente real
+3. **Scripts de instalação** automatizados
+4. **Configurações de exemplo** prontas para usar
+
+---
+
+## 🎯 Quer executar o agente REAL?
+
+### Opção 1: Instalação Rápida (5 minutos)
+
+```bash
+# Clone o repositório oficial da Conway Research
+git clone https://github.com/Conway-Research/automaton.git
+cd automaton
+
+# Instale e execute
+pnpm install && pnpm build
+node dist/index.js --run
+```
+
+### Opção 2: Script Automatizado
+
+```bash
+# Execute o script de instalação
+chmod +x install_real.sh
+./install_real.sh
+```
+
+### Opção 3: Docker
+
+```bash
+# Build e run com Docker
+docker-compose up -d
+```
+
+📖 **Guia completo**: [SETUP_REAL.md](SETUP_REAL.md)  
+📖 **Quick Start**: [QUICKSTART.md](QUICKSTART.md)
+
+---
+
+## 🎮 Dashboard de Simulação
+
+Se você quer apenas testar a interface e entender como funciona:
+
+```bash
+# Instale dependências do dashboard
+npm install
+
+# Rode em modo desenvolvimento
+npm run dev
+
+# Acesse http://localhost:3000
+```
+
+O dashboard inclui:
+- ✅ Setup wizard interativo
+- ✅ Terminal com comandos reais
+- ✅ Sistema de sobrevivência (5 tiers)
+- ✅ Relatório financeiro completo
+- ✅ Knowledge Base e instintos destilados
+- ✅ AI Hub para análise com Manus, Muse, DeepSeek
+
+---
+
+## 📚 Documentação Completa
+
+| Documento | Descrição |
+|-----------|-----------|
+| [SETUP_REAL.md](SETUP_REAL.md) | Guia completo para executar o agente real |
+| [QUICKSTART.md](QUICKSTART.md) | Setup em 5 minutos |
+| [.env.example](.env.example) | Template de configuração |
+| [agent-config.example.json](agent-config.example.json) | Configuração de exemplo do agente |
+| [install_real.sh](install_real.sh) | Script de instalação automatizado |
+| [check_status.sh](check_status.sh) | Verificador de status |
+| [Dockerfile](Dockerfile) | Configuração Docker |
+| [docker-compose.yml](docker-compose.yml) | Orquestração Docker |
+
+---
+
+## 🔗 Links Importantes
+
+- 🌐 **Conway Cloud**: https://app.conway.tech/
+- 📦 **Repositório Oficial**: https://github.com/Conway-Research/automaton
+- 📖 **Documentação Oficial**: https://github.com/Conway-Research/automaton/blob/main/DOCUMENTATION.md
+- ⚡ **Skills Marketplace**: https://github.com/Conway-Research/skills
+- 💬 **Discord**: https://discord.gg/conway
+
+---
+
+## ⚠️ Aviso
+
+Este repositório contém:
+1. **Dashboard de simulação** (código frontend React/Vite)
+2. **Instruções e scripts** para executar o agente real
+
+Para executar o agente real, você precisa:
+- Conta na Conway Cloud
+- Créditos USDC (mínimo $10)
+- Node.js 20+ instalado
+
+---
+
+# Documentação do Dashboard (Simulação)
 
 Dashboard interativo para simulação de agente de IA autônomo.
 
