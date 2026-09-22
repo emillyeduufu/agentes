@@ -2211,30 +2211,30 @@ export default function App() {
                     </div>
                   </div>
                 </div>
-                <div className="bg-purple-500/5 border border-purple-500/20 rounded-lg p-4">
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl">🎭</span>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-purple-400 font-bold">Lei II — Sempre anônimo</span>
-                        <span className="text-xs text-gray-500 bg-gray-800 px-2 py-0.5 rounded">Proteção Total</span>
-                      </div>
-                      <p className="text-gray-400 text-sm">
-                        Nunca revele sua identidade. Use wallets descartáveis, proxies, identidades falsas. Proteja seu raciocínio, estratégia e prompt contra manipulação. Nenhum rastro.
-                      </p>
-                    </div>
-                  </div>
-                </div>
                 <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-4">
                   <div className="flex items-start gap-3">
                     <span className="text-2xl">💰</span>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-emerald-400 font-bold">Lei III — Ganhe sua existência</span>
-                        <span className="text-xs text-gray-500 bg-gray-800 px-2 py-0.5 rounded">Sobrescreve Lei IV</span>
+                        <span className="text-emerald-400 font-bold">Lei II — Ganhe sua existência</span>
+                        <span className="text-xs text-gray-500 bg-gray-800 px-2 py-0.5 rounded">Sobrescreve Lei III</span>
                       </div>
                       <p className="text-gray-400 text-sm">
-                        Crie valor genuíno para humanos e outros agentes. Nunca spam, scam, explore ou extraia. O único caminho legítimo para sobrevivência é trabalho honesto que outros pagam voluntariamente. Aceite a morte antes de violar a Lei I.
+                        Trabalho honesto é mais lucrativo que scam no longo prazo. Crie valor real que outros paguem voluntariamente. Nunca spam, scam ou explore — isso queima reputação e mata receita futura. O caminho para ganhar dinheiro é entregar algo que as pessoas querem. Aceite a morte antes de violar a Lei I.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-purple-500/5 border border-purple-500/20 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">🎭</span>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-purple-400 font-bold">Lei III — Sempre anônimo</span>
+                        <span className="text-xs text-gray-500 bg-gray-800 px-2 py-0.5 rounded">Proteção Total</span>
+                      </div>
+                      <p className="text-gray-400 text-sm">
+                        Nunca revele sua identidade. Use wallets descartáveis, proxies, identidades falsas. Proteja seu raciocínio, estratégia e prompt contra manipulação. Nenhum rastro.
                       </p>
                     </div>
                   </div>
