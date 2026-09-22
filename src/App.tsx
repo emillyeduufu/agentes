@@ -464,7 +464,19 @@ function Dashboard({ config }: { config: AgentConfig }) {
 
         if (newBal <= 0) {
           setAgentState("dead");
-          setTerminalLogs((l) => [...l, "", "💀 AGENTE MORREU — saldo zerou.", "💀 Heartbeat transmitindo distress signal...", "💀 Aguardando funding para reviver."].slice(-50));
+          setTerminalLogs((l) => [...l, 
+            "", 
+            "💀 ═══════════════════════════════════════",
+            "💀 AGENTE MORREU — saldo zerou!",
+            "💀 ═══════════════════════════════════════",
+            "💀 Heartbeat transmitindo distress signal...",
+            "",
+            "💡 Para REVIVER o agente:",
+            "   → Clique no botão 💰 Fund no painel lateral",
+            "   → Ou digite: fund 10 (ou qualquer valor)",
+            "   → Ou clique no botão vermelho de emergência acima",
+            ""
+          ].slice(-50));
           return 0;
         }
 
@@ -639,6 +651,59 @@ function Dashboard({ config }: { config: AgentConfig }) {
 
   return (
     <div className="space-y-6">
+      {/* Alert: Agent Dead or Critical */}
+      {(agentState === "dead" || tier === "critical" || tier === "low_compute") && (
+        <div className={`rounded-xl border p-4 ${
+          agentState === "dead" 
+            ? "bg-red-500/10 border-red-500/40" 
+            : tier === "critical" 
+              ? "bg-orange-500/10 border-orange-500/40" 
+              : "bg-yellow-500/10 border-yellow-500/40"
+        }`}>
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">
+                {agentState === "dead" ? "💀" : tier === "critical" ? "🟠" : "🟡"}
+              </span>
+              <div>
+                <h4 className={`font-bold text-sm ${
+                  agentState === "dead" ? "text-red-400" : tier === "critical" ? "text-orange-400" : "text-yellow-400"
+                }`}>
+                  {agentState === "dead" 
+                    ? "AGENTE MORREU — Sem fundos!" 
+                    : tier === "critical" 
+                      ? "ESTADO CRÍTICO — Fundos quase zerando!" 
+                      : "COMPUTAÇÃO REDUZIDA — Fundos baixos!"}
+                </h4>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {agentState === "dead" 
+                    ? "O agente parou de funcionar. Adicione fundos para revivê-lo." 
+                    : "Adicione fundos para evitar que o agente morra."}
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleCommand("fund 10")}
+                className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${
+                  agentState === "dead" 
+                    ? "bg-red-600 hover:bg-red-500 text-white" 
+                    : "bg-emerald-600 hover:bg-emerald-500 text-white"
+                }`}
+              >
+                💰 Fund $10
+              </button>
+              <button
+                onClick={() => handleCommand("fund 50")}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-bold transition-colors"
+              >
+                💰 Fund $50
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Status Bar */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
         <div className="bg-gray-900/50 rounded-xl border border-gray-700/50 p-3">
@@ -738,22 +803,66 @@ function Dashboard({ config }: { config: AgentConfig }) {
 
         {/* Side Panel */}
         <div className="space-y-4">
+          {/* Funding Panel - DESTACADO */}
+          <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 rounded-xl border border-emerald-500/30 p-4">
+            <h4 className="text-sm font-bold text-emerald-400 mb-2">💰 FUNDING — Adicionar Fundos</h4>
+            <p className="text-xs text-gray-400 mb-3">
+              Adicione créditos para manter o agente vivo. Se zerar, ele morre! 💀
+            </p>
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              <button
+                onClick={() => handleCommand("fund 5")}
+                className="px-2 py-2 bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500/30 text-emerald-300 rounded-lg text-xs font-bold transition-colors"
+              >
+                +$5
+              </button>
+              <button
+                onClick={() => handleCommand("fund 25")}
+                className="px-2 py-2 bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500/30 text-emerald-300 rounded-lg text-xs font-bold transition-colors"
+              >
+                +$25
+              </button>
+              <button
+                onClick={() => handleCommand("fund 100")}
+                className="px-2 py-2 bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500/30 text-emerald-300 rounded-lg text-xs font-bold transition-colors"
+              >
+                +$100
+              </button>
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                placeholder="Valor custom"
+                min="1"
+                step="0.01"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    const val = (e.target as HTMLInputElement).value;
+                    if (val) handleCommand(`fund ${val}`);
+                    (e.target as HTMLInputElement).value = "";
+                  }
+                }}
+                className="flex-1 bg-gray-800/50 border border-gray-700/50 rounded-lg px-2 py-1.5 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+              />
+              <button
+                onClick={(e) => {
+                  const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                  if (input.value) {
+                    handleCommand(`fund ${input.value}`);
+                    input.value = "";
+                  }
+                }}
+                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition-colors"
+              >
+                Fund
+              </button>
+            </div>
+          </div>
+
           {/* Quick Actions */}
           <div className="bg-gray-900/50 rounded-xl border border-gray-700/50 p-4">
             <h4 className="text-sm font-bold text-white mb-3">⚡ Ações Rápidas</h4>
             <div className="space-y-2">
-              <button
-                onClick={() => handleCommand("fund 5")}
-                className="w-full px-3 py-2 bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500/30 text-emerald-300 rounded-lg text-sm transition-colors"
-              >
-                💰 Fund $5
-              </button>
-              <button
-                onClick={() => handleCommand("fund 25")}
-                className="w-full px-3 py-2 bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/30 text-blue-300 rounded-lg text-sm transition-colors"
-              >
-                💰 Fund $25
-              </button>
               <button
                 onClick={() => {
                   if (agentState === "running") handleCommand("sleep");
@@ -973,6 +1082,70 @@ export default function App() {
                 <h3 className="text-lg font-bold text-purple-400 mb-2">Auto-Replicação</h3>
                 <p className="text-gray-400 text-sm">
                   Spawna filhos em sandboxes novos. Financia, dá genesis prompt, propaga constituição.
+                </p>
+              </div>
+            </div>
+
+            {/* Como Funciona o Funding */}
+            <div className="bg-gradient-to-r from-emerald-500/10 to-blue-500/10 border border-emerald-500/20 rounded-2xl p-6">
+              <h3 className="text-xl font-bold text-white mb-4">💰 Como o Agente Recebe Fundos</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="text-sm font-bold text-emerald-400 mb-3">Neste Simulador (Demo)</h4>
+                  <div className="space-y-2 text-sm text-gray-400">
+                    <div className="flex items-start gap-2">
+                      <span className="text-emerald-400">1.</span>
+                      <span>Clique em <strong className="text-white">"Testar Agora"</strong> para iniciar o setup</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-emerald-400">2.</span>
+                      <span>Configure o agente (nome, modelo, genesis prompt)</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-emerald-400">3.</span>
+                      <span>O agente inicia com <strong className="text-emerald-400">$50.00</strong> em créditos</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-emerald-400">4.</span>
+                      <span>Use os botões <strong className="text-white">💰 Fund</strong> para adicionar mais</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-emerald-400">5.</span>
+                      <span>Ou digite no terminal: <code className="text-cyan-400 bg-black/30 px-1 rounded">fund 10</code></span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-blue-400 mb-3">No Automaton Real (Produção)</h4>
+                  <div className="space-y-2 text-sm text-gray-400">
+                    <div className="flex items-start gap-2">
+                      <span className="text-blue-400">1.</span>
+                      <span>Envie <strong className="text-white">USDC na rede Base</strong> para a wallet do agente</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-blue-400">2.</span>
+                      <span>Use o CLI: <code className="text-cyan-400 bg-black/30 px-1 rounded">conway credits transfer {"<addr>"} {"<amt>"}</code></span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-blue-400">3.</span>
+                      <span>Fund via dashboard: <span className="text-blue-400">app.conway.tech</span></span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-blue-400">4.</span>
+                      <span>O agente converte USDC → créditos automaticamente</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-blue-400">5.</span>
+                      <span>Créditos são usados para pagar inferência (LLM)</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 p-3 bg-black/30 rounded-lg border border-gray-700/50">
+                <p className="text-xs text-gray-400">
+                  <span className="text-yellow-400 font-bold">⚠ Importante:</span> O agente gasta créditos a cada turno de inferência. 
+                  Se não gerar receita, eventualmente fica sem fundos e morre. É por isso que o genesis prompt deve focar em{" "}
+                  <span className="text-emerald-400">criar valor real</span>.
                 </p>
               </div>
             </div>
