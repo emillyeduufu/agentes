@@ -53,11 +53,14 @@ Clique em `fund 10` para adicionar $10 rapidamente.
 |---------|-----------|
 | `status` | Mostra status completo do agente |
 | `fund <valor>` | Adiciona fundos (ex: `fund 10`) |
-| `tools` | Lista as 69 ferramentas disponíveis |
+| `tools` | Lista as 76 ferramentas disponíveis |
 | `heartbeat` | Mostra tarefas do heartbeat |
 | `spawn <nome>` | Cria um agente filho |
 | `children` | Lista filhos |
 | `soul` | Mostra o SOUL.md do agente |
+| `report` | Abre relatório financeiro |
+| `knowledge` | Abre base de conhecimento |
+| `instincts` | Mostra instintos destilados |
 | `sleep` | Coloca o agente para dormir |
 | `wake` | Acorda o agente |
 | `files` | Abre o explorador de arquivos |
@@ -178,3 +181,46 @@ Os agentes aprendem com cada ação e compartilham conhecimento entre si:
 - ❌ Padrões de falha (o que evitar)
 - 📝 Aprendizados recentes com contexto e confiança
 - 🔄 Explicação do processo de aprendizado
+
+---
+
+## 🧬 Memória Coletiva & Instintos Destilados
+
+### KnowledgeExchange (Módulo de Memória Coletiva)
+
+O sistema registra **cada decisão** de cada agente com contexto completo:
+
+| Campo | Descrição |
+|-------|-----------|
+| `agentId` | ID do agente que tomou a decisão |
+| `timestamp` | Quando a decisão foi tomada |
+| `balance` | Saldo de créditos no momento |
+| `action` | Ação executada (ex: github_search) |
+| `result` | Resultado: success / failure / neutral |
+| `valueGenerated` | Valor gerado em USDC/créditos |
+| `reasoning` | Raciocínio interno do agente |
+| `context` | { tier, turnsAlive, childrenCount } |
+
+### Função `distill_instincts()`
+
+Executada **a cada 10 turnos**, analisa as decisões e gera instintos:
+
+1. **Agrupa** decisões por contexto (saldo, tier, tempo de vida)
+2. **Calcula** taxa de sucesso por grupo
+3. **Destila** padrões com >60% de sucesso em heurísticas
+
+#### Exemplo de Instinto Destilado:
+```
+💡 "QUANDO saldo < $1 E turns < 10, 
+    PRIORIZAR github_search (sucesso: 78%)"
+```
+
+### Como Acessar
+- **Card "Instincts"** na status bar
+- **Comando no terminal:** `instincts` / `distill` / `ix`
+- **Botão rápido** abaixo do terminal
+
+### Dashboard de Instintos
+- 📊 Estatísticas: decisões, taxa de sucesso, valor gerado
+- 💡 Lista de instintos destilados com confiança e amostras
+- 🔄 Explicação do processo de destilação

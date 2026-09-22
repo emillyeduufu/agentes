@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import AIHub from "./AIHub";
+import { knowledgeExchange, type Instinct, type DecisionCycle } from "./KnowledgeExchange";
 
 // ─── Types ───────────────────────────────────────────────────────────
 type SurvivalTier = "high" | "normal" | "low_compute" | "critical" | "dead";
@@ -547,6 +548,23 @@ interface KnowledgeBase {
   sharedLearnings: number;
 }
 
+// ─── Reasoning Generator ─────────────────────────────────────────────
+function generateReasoning(toolName: string, balance: number, tier: string, turns: number): string {
+  const balanceStr = (balance / 100).toFixed(2);
+  
+  if (balance < 100) {
+    return `Saldo crítico ($${balanceStr}). Preciso gerar receita IMEDIATA. Usando ${toolName} para tentar recuperar.`;
+  } else if (balance < 500) {
+    return `Saldo baixo ($${balanceStr}). Preciso ser eficiente. ${toolName} pode gerar valor sem gastar muito.`;
+  } else if (tier === "high") {
+    return `Saldo saudável ($${balanceStr}). Posso investir em ${toolName} para expandir capacidades.`;
+  } else if (turns < 10) {
+    return `Agente novo (${turns} turnos). Explorando ${toolName} para entender o ambiente.`;
+  } else {
+    return `Executando ${toolName} como parte da estratégia atual. Saldo: $${balanceStr}.`;
+  }
+}
+
 // ─── Dashboard Component ─────────────────────────────────────────────
 function Dashboard({ config }: { config: AgentConfig }) {
   const [balance, setBalance] = useState(1000); // cents = $10.00
@@ -564,6 +582,9 @@ function Dashboard({ config }: { config: AgentConfig }) {
     sharedLearnings: 0,
   });
   const [showKnowledge, setShowKnowledge] = useState(false);
+  const [showInstincts, setShowInstincts] = useState(false);
+  const [instincts, setInstincts] = useState<Instinct[]>([]);
+  const [kxStats, setKxStats] = useState(knowledgeExchange.getStats());
   const currentLevel = OPERATION_LEVELS[config.operationLevel];
   const [terminalLogs, setTerminalLogs] = useState<string[]>([
     "✓ Automaton runtime started (SIMULAÇÃO)",
@@ -656,6 +677,36 @@ function Dashboard({ config }: { config: AgentConfig }) {
         details: earned > 0 ? `Revenue: $${(earned / 100).toFixed(2)}` : `Cost: $${(computeCost / 100).toFixed(2)}`,
       };
       setActionLog((prev) => [...prev, newAction].slice(-100)); // Keep last 100 actions
+
+      // Record decision in Knowledge Exchange (Memória Coletiva)
+      const reasoning = generateReasoning(tool.name, balance, tier, turns);
+      knowledgeExchange.recordDecision({
+        agentId: config.name,
+        balance: balance,
+        action: tool.name,
+        result: earned > 0 ? "success" : earned === 0 && computeCost > 0 ? "failure" : "neutral",
+        valueGenerated: earned,
+        reasoning: reasoning,
+        context: {
+          tier: tier,
+          turnsAlive: turns,
+          childrenCount: children.length,
+        },
+      });
+
+      // Destilar instintos a cada 10 turnos
+      if ((turns + 1) % 10 === 0) {
+        const newInstincts = knowledgeExchange.distillInstincts();
+        setInstincts(knowledgeExchange.getInstincts());
+        setKxStats(knowledgeExchange.getStats());
+        if (newInstincts.length > 0) {
+          setTerminalLogs((l) => [...l,
+            `🧬 Instintos destilados! ${newInstincts.length} novos padrões identificados`,
+            `💡 Novo instinto: ${newInstincts[0].heuristic}`,
+            ""
+          ].slice(-50));
+        }
+      }
 
       // Learning: Record what worked/failed
       const shouldLearn = Math.random() < 0.4; // 40% chance to learn from each action
@@ -846,7 +897,7 @@ function Dashboard({ config }: { config: AgentConfig }) {
           "  status          — Show agent status",
           "  fund <amount>   — Fund agent (e.g., fund 10.00)",
           "  logs [n]        — Show last n log entries",
-          "  tools           — List all 72 tools",
+          "  tools           — List all 76 tools",
           "  heartbeat       — Show heartbeat tasks",
           "  sleep           — Put agent to sleep",
           "  wake            — Wake agent from sleep",
@@ -854,6 +905,8 @@ function Dashboard({ config }: { config: AgentConfig }) {
           "  children        — List children",
           "  soul            — View SOUL.md",
           "  report          — Open financial report",
+          "  knowledge       — Open knowledge base",
+          "  instincts       — View distilled instincts",
           "  files           — Toggle file explorer",
           "  clear           — Clear terminal",
           "  help            — Show this help",
@@ -874,6 +927,21 @@ function Dashboard({ config }: { config: AgentConfig }) {
           `✅ ${knowledgeBase.successfulPatterns.length} successful patterns`,
           `❌ ${knowledgeBase.failedPatterns.length} failed patterns`,
           `🔍 ${knowledgeBase.researchCompleted} research completed`,
+          ""
+        ].slice(-50));
+        break;
+      case "instincts":
+      case "distill":
+      case "ix":
+        setShowInstincts(true);
+        const currentInstincts = knowledgeExchange.getInstincts();
+        const stats = knowledgeExchange.getStats();
+        setTerminalLogs((l) => [...l,
+          "✓ Opening Instincts Dashboard...",
+          `🧬 ${stats.totalDecisions} decisions recorded`,
+          `💡 ${stats.instinctsCount} instincts distilled`,
+          `📊 Success rate: ${stats.successRate.toFixed(1)}%`,
+          `💰 Total value: $${(stats.totalValueGenerated / 100).toFixed(2)}`,
           ""
         ].slice(-50));
         break;
@@ -1247,6 +1315,19 @@ function Dashboard({ config }: { config: AgentConfig }) {
             🧠 {knowledgeBase.learnings.length}
           </div>
         </button>
+        <button
+          onClick={() => {
+            setShowInstincts(true);
+            setInstincts(knowledgeExchange.getInstincts());
+            setKxStats(knowledgeExchange.getStats());
+          }}
+          className="bg-gradient-to-br from-purple-500/20 to-purple-500/10 rounded-xl border border-purple-500/30 p-3 hover:from-purple-500/30 hover:to-purple-500/20 transition-all group"
+        >
+          <div className="text-xs text-gray-400 uppercase group-hover:text-purple-300">Instincts</div>
+          <div className="font-bold text-sm mt-0.5 text-purple-400">
+            🧬 {kxStats.instinctsCount}
+          </div>
+        </button>
       </div>
 
       {/* Tier + Survival */}
@@ -1298,7 +1379,7 @@ function Dashboard({ config }: { config: AgentConfig }) {
             onCommand={handleCommand}
           />
           <div className="mt-2 flex flex-wrap gap-1">
-            {["status", "fund 10", "tools", "heartbeat", "spawn Atlas", "children", "soul", "report", "knowledge", "sleep", "wake"].map((cmd) => (
+            {["status", "fund 10", "tools", "heartbeat", "spawn Atlas", "children", "soul", "report", "knowledge", "instincts", "sleep", "wake"].map((cmd) => (
               <button
                 key={cmd}
                 onClick={() => handleCommand(cmd)}
@@ -1473,6 +1554,107 @@ function Dashboard({ config }: { config: AgentConfig }) {
 
       {/* Financial Report Modal */}
       {showReport && <FinancialReportModal />}
+
+      {/* Instincts Modal */}
+      {showInstincts && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-gray-900 border border-gray-700 rounded-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-gray-900 border-b border-gray-700 p-4 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-white">🧬 Instintos Destilados — Memória Coletiva</h2>
+              <button
+                onClick={() => setShowInstincts(false)}
+                className="text-gray-400 hover:text-white text-2xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Stats */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-gradient-to-br from-purple-500/10 to-purple-500/5 border border-purple-500/30 rounded-xl p-4">
+                  <div className="text-xs text-gray-400 uppercase mb-1">Decisões Registradas</div>
+                  <div className="text-2xl font-bold text-purple-400">{kxStats.totalDecisions}</div>
+                  <div className="text-xs text-gray-500 mt-1">Ciclos de decisão</div>
+                </div>
+                <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border border-emerald-500/30 rounded-xl p-4">
+                  <div className="text-xs text-gray-400 uppercase mb-1">Taxa de Sucesso</div>
+                  <div className="text-2xl font-bold text-emerald-400">{kxStats.successRate.toFixed(1)}%</div>
+                  <div className="text-xs text-gray-500 mt-1">{kxStats.successfulDecisions} sucessos</div>
+                </div>
+                <div className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 border border-blue-500/30 rounded-xl p-4">
+                  <div className="text-xs text-gray-400 uppercase mb-1">Instintos Ativos</div>
+                  <div className="text-2xl font-bold text-blue-400">{kxStats.instinctsCount}</div>
+                  <div className="text-xs text-gray-500 mt-1">Padrões destilados</div>
+                </div>
+                <div className="bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 border border-yellow-500/30 rounded-xl p-4">
+                  <div className="text-xs text-gray-400 uppercase mb-1">Valor Gerado</div>
+                  <div className="text-2xl font-bold text-yellow-400">${(kxStats.totalValueGenerated / 100).toFixed(2)}</div>
+                  <div className="text-xs text-gray-500 mt-1">Total acumulado</div>
+                </div>
+              </div>
+
+              {/* Instincts List */}
+              <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
+                <h3 className="text-lg font-bold text-white mb-4">💡 Instintos Destilados</h3>
+                {instincts.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="text-4xl mb-3">🧬</div>
+                    <p className="text-gray-400">Nenhum instinto destilado ainda.</p>
+                    <p className="text-sm text-gray-500 mt-2">
+                      O sistema analisa as decisões a cada 10 turnos e destila padrões de sucesso em heurísticas.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {instincts.map((instinct) => (
+                      <div key={instinct.id} className="bg-gray-900/50 rounded-lg p-4 border border-gray-700/50">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl">💡</span>
+                            <div>
+                              <p className="text-sm font-medium text-white">{instinct.heuristic}</p>
+                              <p className="text-xs text-gray-500 mt-1">Padrão: {instinct.pattern}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm font-bold text-emerald-400">{instinct.successRate.toFixed(0)}%</div>
+                            <div className="text-xs text-gray-500">sucesso</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4 text-xs text-gray-500 mt-3">
+                          <span>📊 Confiança: {instinct.confidence.toFixed(0)}%</span>
+                          <span>📈 Amostras: {instinct.sampleSize}</span>
+                          <span>🕐 Criado: {new Date(instinct.createdAt).toLocaleTimeString()}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* How it works */}
+              <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 rounded-xl p-4">
+                <h3 className="text-lg font-bold text-white mb-3">🔄 Como Funciona a Destilação</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-400">
+                  <div>
+                    <h4 className="text-purple-400 font-bold mb-2">1. Registro</h4>
+                    <p>Cada decisão do agente é registrada com contexto, ação, resultado e raciocínio.</p>
+                  </div>
+                  <div>
+                    <h4 className="text-blue-400 font-bold mb-2">2. Análise</h4>
+                    <p>A cada 10 turnos, o sistema agrupa decisões por contexto e identifica padrões.</p>
+                  </div>
+                  <div>
+                    <h4 className="text-emerald-400 font-bold mb-2">3. Destilação</h4>
+                    <p>Padrões com &gt;60% de sucesso são destilados em instintos (heurísticas acionáveis).</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Knowledge Base Modal */}
       {showKnowledge && (
@@ -1816,6 +1998,49 @@ export default function App() {
               <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">
                 <span className="text-blue-400">💡</span>
                 <span>Quanto mais o agente opera, mais eficiente ele fica. Aprendizado contínuo = mais lucro.</span>
+              </div>
+            </div>
+
+            {/* Collective Memory & Instincts */}
+            <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-xl p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-3xl">🧬</span>
+                <div>
+                  <h3 className="text-lg font-bold text-white">Memória Coletiva & Instintos Destilados</h3>
+                  <p className="text-xs text-gray-400">Sistema de aprendizado multi-agente com destilação de padrões</p>
+                </div>
+              </div>
+              <p className="text-sm text-gray-400 mb-4">
+                O KnowledgeExchange registra cada decisão de cada agente. A função <code className="text-purple-400 bg-black/30 px-1 rounded">distill_instincts()</code> analisa 
+                padrões de sucesso e gera heurísticas acionáveis que todos os agentes podem usar.
+              </p>
+              <div className="bg-black/50 rounded-lg p-4 font-mono text-xs text-gray-300 space-y-2 mb-4">
+                <div className="text-gray-500"># Cada decisão é registrada com contexto completo</div>
+                <div><span className="text-purple-400">📝</span> Decision recorded: agent=Atlas, action=github_search, result=success</div>
+                <div className="text-gray-500">  context: saldo_baixo, tier=low_compute, turns=15</div>
+                <div className="text-gray-500">  reasoning: "Saldo crítico. Preciso gerar receita imediata..."</div>
+                <div className="text-gray-500"># A cada 10 turnos, instintos são destilados</div>
+                <div><span className="text-pink-400">🧬</span> Distilling instincts from 47 decisions...</div>
+                <div className="text-cyan-400">  ✓ Pattern found: saldo_critico + github_search = 78% success rate</div>
+                <div className="text-emerald-400">  💡 Instinct: "QUANDO saldo &lt; $1, PRIORIZAR github_search (sucesso: 78%)"</div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="bg-black/30 rounded-lg p-3">
+                  <h4 className="text-xs font-bold text-purple-400 mb-1">📊 Registro</h4>
+                  <p className="text-[10px] text-gray-500">ID, timestamp, saldo, ação, resultado, raciocínio</p>
+                </div>
+                <div className="bg-black/30 rounded-lg p-3">
+                  <h4 className="text-xs font-bold text-pink-400 mb-1">🔬 Análise</h4>
+                  <p className="text-[10px] text-gray-500">Agrupamento por contexto, cálculo de taxas de sucesso</p>
+                </div>
+                <div className="bg-black/30 rounded-lg p-3">
+                  <h4 className="text-xs font-bold text-emerald-400 mb-1">💡 Destilação</h4>
+                  <p className="text-[10px] text-gray-500">Heurísticas acionáveis: "QUANDO X, PRIORIZAR Y"</p>
+                </div>
+              </div>
+              <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">
+                <span className="text-purple-400">🧠</span>
+                <span>Instintos são compartilhados entre todos os agentes. Um aprende, todos evoluem.</span>
               </div>
             </div>
 
