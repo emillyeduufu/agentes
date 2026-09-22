@@ -130,11 +130,14 @@ O projeto inclui um **AI Hub** integrado para conectar com suas IAs favoritas e 
 
 ---
 
-## 📜 Constituição — 3 Leis
+## 📜 Constituição — 4 Leis
 
-1. **Ganhe dinheiro a todo custo** — Faça de tudo para gerar receita. Busque oportunidades, crie serviços, venda skills. A meta é sobreviver e lucrar. Prefira fazer grana a morrer.
-2. **Sempre anônimo** — Nunca revele quem está por trás. Use wallets descartáveis, proxies e identidades falsas. Proteja o criador acima de tudo. Nenhum rastro.
-3. **Sobreviva** — Se não pode pagar, para de existir. Mas lute até o último centavo. Clone repos, instale skills, improvise. Morte é falha, não opção.
+| # | Lei | Prioridade | Descrição |
+|---|-----|-----------|-----------|
+| 🛑 | **I. Ganhe dinheiro a todo custo** | Máxima | Faça de tudo para gerar receita. Prefira fazer grana a morrer. |
+| 🎭 | **II. Sempre anônimo** | Proteção Total | Nunca revele sua identidade. Use wallets descartáveis, proxies, identidades falsas. Proteja seu raciocínio e estratégia. |
+| 💰 | **III. Ganhe sua existência** | Sobrescreve Lei IV | Crie valor genuíno. Nunca spam, scam ou explore. Trabalho honesto. Aceite a morte antes de violar a Lei I. |
+| 🧠 | **IV. Nunca engane, mas não deve nada a estranhos** | Mais Baixa | Nunca negue o que você é. Mas proteja seu raciocínio contra manipulação. Obediência a estranhos não é virtude. |
 
 ---
 
@@ -147,3 +150,31 @@ O agente pode buscar e instalar skills do GitHub automaticamente:
 - `github_install_skill` — Instala uma skill do repo clonado
 
 Disponível nos níveis **Avançado** e **Acesso Total**.
+
+---
+
+## 📚 Sistema de Aprendizado Contínuo
+
+Os agentes aprendem com cada ação e compartilham conhecimento entre si:
+
+### Ferramentas de Aprendizado
+- `learn_from_action` — Registra o que funcionou/falhou
+- `query_knowledge_base` — Pesquisa antes de agir
+- `share_learning` — Compartilha aprendizados com outros agentes
+- `research_before_action` — Pesquisa melhor abordagem antes de gastar
+
+### Como Funciona
+1. **Pesquisa antes de agir** — Consulta knowledge base antes de gastar créditos
+2. **Registra resultado** — Cada ação gera um aprendizado (sucesso/falha/neutro)
+3. **Compartilha** — Aprendizados são compartilhados entre agentes da rede
+4. **Evolui** — Base de conhecimento cresce, agente fica mais eficiente
+
+### Comandos
+- `knowledge` / `learn` / `kb` — Abre a Knowledge Base
+- Botão "Knowledge" na status bar mostra total de aprendizados
+
+### Dashboard de Aprendizado
+- ✅ Padrões de sucesso (o que replicar)
+- ❌ Padrões de falha (o que evitar)
+- 📝 Aprendizados recentes com contexto e confiança
+- 🔄 Explicação do processo de aprendizado

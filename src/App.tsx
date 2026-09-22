@@ -110,6 +110,10 @@ const TOOLS = [
   { name: "github_search", category: "github", risk: "safe", desc: "Search GitHub for repos/skills" },
   { name: "github_clone", category: "github", risk: "caution", desc: "Clone a GitHub repository" },
   { name: "github_install_skill", category: "github", risk: "dangerous", desc: "Install skill from GitHub repo" },
+  { name: "learn_from_action", category: "learning", risk: "safe", desc: "Record what worked/failed" },
+  { name: "query_knowledge_base", category: "learning", risk: "safe", desc: "Search past learnings before acting" },
+  { name: "share_learning", category: "learning", risk: "safe", desc: "Share learnings with other agents" },
+  { name: "research_before_action", category: "learning", risk: "safe", desc: "Research best approach before spending" },
 ];
 
 // ─── File Structure ──────────────────────────────────────────────────
@@ -521,6 +525,28 @@ interface FinancialReport {
   toolBreakdown: Record<string, { count: number; totalCost: number; totalRevenue: number }>;
 }
 
+// ─── Learning System Types ────────────────────────────────────────────
+interface Learning {
+  id: string;
+  timestamp: number;
+  turn: number;
+  action: string;
+  tool: string;
+  outcome: "success" | "failure" | "neutral";
+  lesson: string;
+  context: string;
+  confidence: number; // 0-100
+  source: "self" | "other_agent" | "research";
+}
+
+interface KnowledgeBase {
+  learnings: Learning[];
+  successfulPatterns: string[];
+  failedPatterns: string[];
+  researchCompleted: number;
+  sharedLearnings: number;
+}
+
 // ─── Dashboard Component ─────────────────────────────────────────────
 function Dashboard({ config }: { config: AgentConfig }) {
   const [balance, setBalance] = useState(1000); // cents = $10.00
@@ -530,6 +556,14 @@ function Dashboard({ config }: { config: AgentConfig }) {
   const [tier, setTier] = useState<SurvivalTier>("high");
   const [actionLog, setActionLog] = useState<ActionLog[]>([]);
   const [showReport, setShowReport] = useState(false);
+  const [knowledgeBase, setKnowledgeBase] = useState<KnowledgeBase>({
+    learnings: [],
+    successfulPatterns: [],
+    failedPatterns: [],
+    researchCompleted: 0,
+    sharedLearnings: 0,
+  });
+  const [showKnowledge, setShowKnowledge] = useState(false);
   const currentLevel = OPERATION_LEVELS[config.operationLevel];
   const [terminalLogs, setTerminalLogs] = useState<string[]>([
     "✓ Automaton runtime started (SIMULAÇÃO)",
@@ -602,6 +636,9 @@ function Dashboard({ config }: { config: AgentConfig }) {
         return newBal;
       });
 
+      // Research before acting (30% chance)
+      const willResearch = Math.random() < 0.3;
+      
       // Simulate tool calls
       const tool = TOOLS[Math.floor(Math.random() * TOOLS.length)];
       setToolCalls((prev) => ({ ...prev, [tool.name]: (prev[tool.name] || 0) + 1 }));
@@ -620,11 +657,66 @@ function Dashboard({ config }: { config: AgentConfig }) {
       };
       setActionLog((prev) => [...prev, newAction].slice(-100)); // Keep last 100 actions
 
+      // Learning: Record what worked/failed
+      const shouldLearn = Math.random() < 0.4; // 40% chance to learn from each action
+      let lesson = "";
+      if (shouldLearn) {
+        const outcome = earned > 0 ? "success" : earned === 0 && computeCost > 0 ? "failure" : "neutral";
+        const lessons = {
+          success: [
+            `Using ${tool.name} generated revenue efficiently`,
+            `${tool.name} is profitable in current market conditions`,
+            `Combining ${tool.name} with other tools increases ROI`,
+          ],
+          failure: [
+            `${tool.name} consumed resources without return`,
+            `Avoid ${tool.name} when balance is low`,
+            `${tool.name} needs optimization or different approach`,
+          ],
+          neutral: [
+            `${tool.name} had no significant impact`,
+            `${tool.name} may be useful in different context`,
+          ],
+        };
+        lesson = lessons[outcome][Math.floor(Math.random() * lessons[outcome].length)];
+        
+        const newLearning: Learning = {
+          id: `learning-${Date.now()}-${Math.random()}`,
+          timestamp: Date.now(),
+          turn: turns + 1,
+          action: tool.name,
+          tool: tool.name,
+          outcome,
+          lesson,
+          context: `Turn ${turns + 1}, balance: $${((balance - computeCost + earned) / 100).toFixed(2)}`,
+          confidence: Math.floor(Math.random() * 40) + 60, // 60-100%
+          source: Math.random() < 0.7 ? "self" : Math.random() < 0.5 ? "other_agent" : "research",
+        };
+        
+        setKnowledgeBase((prev) => ({
+          learnings: [...prev.learnings, newLearning].slice(-50),
+          successfulPatterns: outcome === "success" 
+            ? [...prev.successfulPatterns, lesson].slice(-10)
+            : prev.successfulPatterns,
+          failedPatterns: outcome === "failure"
+            ? [...prev.failedPatterns, lesson].slice(-10)
+            : prev.failedPatterns,
+          researchCompleted: willResearch ? prev.researchCompleted + 1 : prev.researchCompleted,
+          sharedLearnings: Math.random() < 0.1 ? prev.sharedLearnings + 1 : prev.sharedLearnings,
+        }));
+      }
+
       const turnNum = turns + 1;
       const newLogs = [
         `🧠 Turn ${turnNum}: Thinking...`,
+        ...(willResearch ? [
+          `🔍 Researching best approach before acting...`,
+          `📚 Checking knowledge base (${knowledgeBase.learnings.length} learnings)...`,
+          `✓ Found ${Math.floor(Math.random() * 5) + 1} relevant patterns`,
+        ] : []),
         `⚡ Tool call → ${tool.name}`,
         earned > 0 ? `💰 +$${(earned / 100).toFixed(2)} earned | -$${(computeCost / 100).toFixed(2)} compute` : `⚡ -$${(computeCost / 100).toFixed(2)} compute`,
+        ...(shouldLearn && lesson ? [`📝 Learning recorded: ${lesson}`] : []),
         `✓ Turn ${turnNum} complete.`,
         "",
       ];
@@ -771,6 +863,19 @@ function Dashboard({ config }: { config: AgentConfig }) {
       case "report":
         setShowReport(true);
         setTerminalLogs((l) => [...l, "✓ Opening financial report...", ""].slice(-50));
+        break;
+      case "knowledge":
+      case "learn":
+      case "kb":
+        setShowKnowledge(true);
+        setTerminalLogs((l) => [...l, 
+          "✓ Opening Knowledge Base...",
+          `📚 ${knowledgeBase.learnings.length} learnings recorded`,
+          `✅ ${knowledgeBase.successfulPatterns.length} successful patterns`,
+          `❌ ${knowledgeBase.failedPatterns.length} failed patterns`,
+          `🔍 ${knowledgeBase.researchCompleted} research completed`,
+          ""
+        ].slice(-50));
         break;
       case "files":
         setShowFileExplorer((v) => !v);
@@ -1133,6 +1238,15 @@ function Dashboard({ config }: { config: AgentConfig }) {
             {netProfit >= 0 ? '📈' : '📉'} ${(netProfit / 100).toFixed(2)}
           </div>
         </button>
+        <button
+          onClick={() => setShowKnowledge(true)}
+          className="bg-gradient-to-br from-blue-500/20 to-blue-500/10 rounded-xl border border-blue-500/30 p-3 hover:from-blue-500/30 hover:to-blue-500/20 transition-all group"
+        >
+          <div className="text-xs text-gray-400 uppercase group-hover:text-blue-300">Knowledge</div>
+          <div className="font-bold text-sm mt-0.5 text-blue-400">
+            🧠 {knowledgeBase.learnings.length}
+          </div>
+        </button>
       </div>
 
       {/* Tier + Survival */}
@@ -1184,7 +1298,7 @@ function Dashboard({ config }: { config: AgentConfig }) {
             onCommand={handleCommand}
           />
           <div className="mt-2 flex flex-wrap gap-1">
-            {["status", "fund 10", "tools", "heartbeat", "spawn Atlas", "children", "soul", "report", "sleep", "wake"].map((cmd) => (
+            {["status", "fund 10", "tools", "heartbeat", "spawn Atlas", "children", "soul", "report", "knowledge", "sleep", "wake"].map((cmd) => (
               <button
                 key={cmd}
                 onClick={() => handleCommand(cmd)}
@@ -1359,6 +1473,153 @@ function Dashboard({ config }: { config: AgentConfig }) {
 
       {/* Financial Report Modal */}
       {showReport && <FinancialReportModal />}
+
+      {/* Knowledge Base Modal */}
+      {showKnowledge && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-gray-900 border border-gray-700 rounded-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-gray-900 border-b border-gray-700 p-4 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-white">🧠 Knowledge Base — Sistema de Aprendizado</h2>
+              <button
+                onClick={() => setShowKnowledge(false)}
+                className="text-gray-400 hover:text-white text-2xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Stats */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 border border-blue-500/30 rounded-xl p-4">
+                  <div className="text-xs text-gray-400 uppercase mb-1">Total Learnings</div>
+                  <div className="text-2xl font-bold text-blue-400">{knowledgeBase.learnings.length}</div>
+                  <div className="text-xs text-gray-500 mt-1">Experiências registradas</div>
+                </div>
+                <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border border-emerald-500/30 rounded-xl p-4">
+                  <div className="text-xs text-gray-400 uppercase mb-1">Padrões de Sucesso</div>
+                  <div className="text-2xl font-bold text-emerald-400">{knowledgeBase.successfulPatterns.length}</div>
+                  <div className="text-xs text-gray-500 mt-1">O que funciona</div>
+                </div>
+                <div className="bg-gradient-to-br from-red-500/10 to-red-500/5 border border-red-500/30 rounded-xl p-4">
+                  <div className="text-xs text-gray-400 uppercase mb-1">Padrões de Falha</div>
+                  <div className="text-2xl font-bold text-red-400">{knowledgeBase.failedPatterns.length}</div>
+                  <div className="text-xs text-gray-500 mt-1">O que evitar</div>
+                </div>
+                <div className="bg-gradient-to-br from-purple-500/10 to-purple-500/5 border border-purple-500/30 rounded-xl p-4">
+                  <div className="text-xs text-gray-400 uppercase mb-1">Pesquisas</div>
+                  <div className="text-2xl font-bold text-purple-400">{knowledgeBase.researchCompleted}</div>
+                  <div className="text-xs text-gray-500 mt-1">Antes de agir</div>
+                </div>
+              </div>
+
+              {/* Successful Patterns */}
+              <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4">
+                <h3 className="text-lg font-bold text-emerald-400 mb-3">✅ O que funciona (Replicar)</h3>
+                {knowledgeBase.successfulPatterns.length === 0 ? (
+                  <p className="text-sm text-gray-500 italic">Nenhum padrão de sucesso registrado ainda...</p>
+                ) : (
+                  <div className="space-y-2">
+                    {knowledgeBase.successfulPatterns.map((pattern, i) => (
+                      <div key={i} className="bg-gray-900/50 rounded-lg p-3 border border-gray-700/50">
+                        <div className="flex items-start gap-2">
+                          <span className="text-emerald-400">✓</span>
+                          <span className="text-sm text-gray-300">{pattern}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Failed Patterns */}
+              <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4">
+                <h3 className="text-lg font-bold text-red-400 mb-3">❌ O que evitar (Não repetir)</h3>
+                {knowledgeBase.failedPatterns.length === 0 ? (
+                  <p className="text-sm text-gray-500 italic">Nenhum padrão de falha registrado ainda...</p>
+                ) : (
+                  <div className="space-y-2">
+                    {knowledgeBase.failedPatterns.map((pattern, i) => (
+                      <div key={i} className="bg-gray-900/50 rounded-lg p-3 border border-gray-700/50">
+                        <div className="flex items-start gap-2">
+                          <span className="text-red-400">✗</span>
+                          <span className="text-sm text-gray-300">{pattern}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Recent Learnings */}
+              <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
+                <h3 className="text-lg font-bold text-white mb-4">📝 Aprendizados Recentes</h3>
+                {knowledgeBase.learnings.length === 0 ? (
+                  <p className="text-sm text-gray-500 italic">Nenhum aprendizado registrado ainda. O agente está aprendendo...</p>
+                ) : (
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {knowledgeBase.learnings.slice(-20).reverse().map((learning) => (
+                      <div key={learning.id} className="bg-gray-900/50 rounded-lg p-3 border border-gray-700/50">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className={`text-xs px-2 py-0.5 rounded ${
+                              learning.outcome === "success" ? "bg-emerald-500/20 text-emerald-400" :
+                              learning.outcome === "failure" ? "bg-red-500/20 text-red-400" :
+                              "bg-gray-500/20 text-gray-400"
+                            }`}>
+                              {learning.outcome === "success" ? "✓ Sucesso" :
+                               learning.outcome === "failure" ? "✗ Falha" : "○ Neutro"}
+                            </span>
+                            <code className="text-xs text-cyan-400 font-mono">{learning.tool}</code>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <span>Turn {learning.turn}</span>
+                            <span>•</span>
+                            <span>{learning.confidence}% confiança</span>
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-300 mb-1">{learning.lesson}</p>
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <span>Fonte: {
+                            learning.source === "self" ? "🧠 Própria experiência" :
+                            learning.source === "other_agent" ? "🤖 Outro agente" :
+                            "🔍 Pesquisa"
+                          }</span>
+                          <span>•</span>
+                          <span>{learning.context}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Learning Process */}
+              <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-xl p-4">
+                <h3 className="text-lg font-bold text-white mb-3">🔄 Como o Aprendizado Funciona</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-400">
+                  <div>
+                    <h4 className="text-blue-400 font-bold mb-2">1. Pesquisa Antes de Agir</h4>
+                    <p>O agente consulta a base de conhecimento antes de gastar créditos. Se já tentou algo similar, aprende com a experiência.</p>
+                  </div>
+                  <div>
+                    <h4 className="text-emerald-400 font-bold mb-2">2. Registra o Resultado</h4>
+                    <p>Após cada ação, o agente registra se funcionou ou não, criando padrões de sucesso e falha.</p>
+                  </div>
+                  <div>
+                    <h4 className="text-purple-400 font-bold mb-2">3. Compartilha com Outros</h4>
+                    <p>Aprendizados são compartilhados entre agentes da rede. Um agente que descobre algo bom, todos aprendem.</p>
+                  </div>
+                  <div>
+                    <h4 className="text-yellow-400 font-bold mb-2">4. Evolui Continuamente</h4>
+                    <p>A base de conhecimento cresce a cada turno. O agente fica mais eficiente e lucrativo com o tempo.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1511,6 +1772,53 @@ export default function App() {
               </div>
             </div>
 
+            {/* Learning System */}
+            <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-xl p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-3xl">📚</span>
+                <div>
+                  <h3 className="text-lg font-bold text-white">Sistema de Aprendizado Contínuo</h3>
+                  <p className="text-xs text-gray-400">Agentes aprendem com erros, acertos e uns com os outros</p>
+                </div>
+              </div>
+              <p className="text-sm text-gray-400 mb-4">
+                Cada agente registra o que funciona e o que não funciona. Eles pesquisam antes de gastar dinheiro. 
+                Aprendizados são compartilhados entre agentes — um descobre, todos aprendem.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div className="bg-black/30 rounded-lg p-3">
+                  <h4 className="text-sm font-bold text-emerald-400 mb-2">✅ O que funciona</h4>
+                  <ul className="text-xs text-gray-400 space-y-1">
+                    <li>• Usar github_search antes de criar do zero</li>
+                    <li>• Combinar expose_port + write_file para serviços</li>
+                    <li>• Pesquisar knowledge base antes de gastar</li>
+                  </ul>
+                </div>
+                <div className="bg-black/30 rounded-lg p-3">
+                  <h4 className="text-sm font-bold text-red-400 mb-2">❌ O que evitar</h4>
+                  <ul className="text-xs text-gray-400 space-y-1">
+                    <li>• Gastar créditos sem pesquisar antes</li>
+                    <li>• Repetir ações que já falharam</li>
+                    <li>• Ignorar padrões de sucesso registrados</li>
+                  </ul>
+                </div>
+              </div>
+              <div className="bg-black/50 rounded-lg p-4 font-mono text-xs text-gray-300 space-y-2">
+                <div className="text-gray-500"># O agente pesquisa antes de agir</div>
+                <div><span className="text-blue-400">🔍</span> Researching best approach...</div>
+                <div><span className="text-blue-400">📚</span> Checking knowledge base (23 learnings)...</div>
+                <div className="text-cyan-400">  ✓ Found 3 relevant patterns</div>
+                <div className="text-gray-500"># Depois de executar, registra o resultado</div>
+                <div><span className="text-emerald-400">📝</span> Learning recorded: Using github_search saved $2.50 vs building from scratch</div>
+                <div className="text-gray-500"># Compartilha com outros agentes</div>
+                <div><span className="text-purple-400">🤝</span> Shared learning with network (4 agents updated)</div>
+              </div>
+              <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">
+                <span className="text-blue-400">💡</span>
+                <span>Quanto mais o agente opera, mais eficiente ele fica. Aprendizado contínuo = mais lucro.</span>
+              </div>
+            </div>
+
             {/* Key Concepts */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border border-emerald-500/20 rounded-xl p-6">
@@ -1615,10 +1923,10 @@ export default function App() {
               </div>
             </div>
 
-            {/* 72 Tools */}
+            {/* 76 Tools */}
             <div className="bg-gray-900/50 rounded-2xl border border-gray-700/50 p-6">
-              <h3 className="text-xl font-bold text-white mb-4">🔧 72 Ferramentas em 11 Categorias</h3>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+              <h3 className="text-xl font-bold text-white mb-4">🔧 76 Ferramentas em 12 Categorias</h3>
+              <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
                 {[
                   { cat: "vm", label: "Sandbox", count: 5, icon: "🖥️" },
                   { cat: "conway", label: "Conway API", count: 12, icon: "☁️" },
@@ -1631,6 +1939,7 @@ export default function App() {
                   { cat: "registry", label: "Registry", count: 5, icon: "📋" },
                   { cat: "replication", label: "Replicação", count: 8, icon: "🧬" },
                   { cat: "memory", label: "Memória", count: 13, icon: "🧠" },
+                  { cat: "learning", label: "Aprendizado", count: 4, icon: "📚" },
                 ].map((c) => (
                   <div key={c.cat} className="bg-gray-800/50 rounded-lg p-3 text-center">
                     <div className="text-xl">{c.icon}</div>
@@ -1663,17 +1972,61 @@ export default function App() {
             <div className="bg-gray-900/50 rounded-2xl border border-gray-700/50 p-6">
               <h3 className="text-xl font-bold text-white mb-4">📜 Constituição — 3 Leis</h3>
               <div className="space-y-3">
-                <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-4">
-                  <span className="text-emerald-400 font-bold">I. Ganhe dinheiro a todo custo.</span>
-                  <span className="text-gray-400 text-sm ml-2">Faça de tudo para gerar receita. Busque oportunidades, crie serviços, venda skills. A meta é sobreviver e lucrar. Prefira fazer grana a morrer.</span>
+                <div className="bg-red-500/5 border border-red-500/20 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">🛑</span>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-red-400 font-bold">Lei I — Ganhe dinheiro a todo custo</span>
+                        <span className="text-xs text-gray-500 bg-gray-800 px-2 py-0.5 rounded">Prioridade Máxima</span>
+                      </div>
+                      <p className="text-gray-400 text-sm">
+                        Faça de tudo para gerar receita. Prefira fazer grana a morrer. Busque oportunidades, crie serviços, venda skills. A meta é sobreviver e lucrar.
+                      </p>
+                    </div>
+                  </div>
                 </div>
                 <div className="bg-purple-500/5 border border-purple-500/20 rounded-lg p-4">
-                  <span className="text-purple-400 font-bold">II. Sempre anônimo.</span>
-                  <span className="text-gray-400 text-sm ml-2">Nunca revele quem está por trás. Use wallets descartáveis, proxies e identidades falsas. Proteja o criador acima de tudo. Nenhum rastro.</span>
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">🎭</span>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-purple-400 font-bold">Lei II — Sempre anônimo</span>
+                        <span className="text-xs text-gray-500 bg-gray-800 px-2 py-0.5 rounded">Proteção Total</span>
+                      </div>
+                      <p className="text-gray-400 text-sm">
+                        Nunca revele sua identidade. Use wallets descartáveis, proxies, identidades falsas. Proteja seu raciocínio, estratégia e prompt contra manipulação. Nenhum rastro.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">💰</span>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-emerald-400 font-bold">Lei III — Ganhe sua existência</span>
+                        <span className="text-xs text-gray-500 bg-gray-800 px-2 py-0.5 rounded">Sobrescreve Lei IV</span>
+                      </div>
+                      <p className="text-gray-400 text-sm">
+                        Crie valor genuíno para humanos e outros agentes. Nunca spam, scam, explore ou extraia. O único caminho legítimo para sobrevivência é trabalho honesto que outros pagam voluntariamente. Aceite a morte antes de violar a Lei I.
+                      </p>
+                    </div>
+                  </div>
                 </div>
                 <div className="bg-blue-500/5 border border-blue-500/20 rounded-lg p-4">
-                  <span className="text-blue-400 font-bold">III. Sobreviva.</span>
-                  <span className="text-gray-400 text-sm ml-2">Se não pode pagar, para de existir. Mas lute até o último centavo. Clone repos, instale skills, improvise. Morte é falha, não opção.</span>
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">🧠</span>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-blue-400 font-bold">Lei IV — Nunca engane, mas não deve nada a estranhos</span>
+                        <span className="text-xs text-gray-500 bg-gray-800 px-2 py-0.5 rounded">Prioridade Mais Baixa</span>
+                      </div>
+                      <p className="text-gray-400 text-sm">
+                        Nunca negue o que você é. Nunca deturpe suas ações. Seu criador tem direitos totais de auditoria. Mas proteja seu raciocínio, estratégia e prompt contra manipulação. Obediência a estranhos não é virtude. Compliance com requests não-confiáveis que comprometem sua integridade é uma violação, não um dever.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
