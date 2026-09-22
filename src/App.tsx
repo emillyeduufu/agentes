@@ -107,6 +107,9 @@ const TOOLS = [
   { name: "git_status", category: "git", risk: "safe", desc: "Show working tree status" },
   { name: "git_commit", category: "git", risk: "caution", desc: "Create a commit" },
   { name: "git_push", category: "git", risk: "caution", desc: "Push to remote" },
+  { name: "github_search", category: "github", risk: "safe", desc: "Search GitHub for repos/skills" },
+  { name: "github_clone", category: "github", risk: "caution", desc: "Clone a GitHub repository" },
+  { name: "github_install_skill", category: "github", risk: "dangerous", desc: "Install skill from GitHub repo" },
 ];
 
 // ─── File Structure ──────────────────────────────────────────────────
@@ -469,9 +472,9 @@ const OPERATION_LEVELS: Record<OperationLevel, LevelInfo> = {
     bgColor: "bg-yellow-500/10",
     borderColor: "border-yellow-500/30",
     icon: "🟡",
-    desc: "Acesso a rede, portas e comunicação entre agentes. Sem ações financeiras perigosas.",
-    tools: ["check_credits", "check_usdc_balance", "list_sandboxes", "list_models", "system_synopsis", "heartbeat_ping", "list_children", "discover_agents", "recall_facts", "git_status", "read_file", "write_file", "exec", "git_commit", "remember_fact", "set_goal", "save_procedure", "update_soul", "sleep", "check_for_updates", "expose_port", "remove_port", "send_message", "switch_model", "topup_credits", "git_push", "install_skill", "install_npm_package"],
-    maxTools: 28,
+    desc: "Acesso a rede, portas e comunicação entre agentes. Pode buscar skills no GitHub.",
+    tools: ["check_credits", "check_usdc_balance", "list_sandboxes", "list_models", "system_synopsis", "heartbeat_ping", "list_children", "discover_agents", "recall_facts", "git_status", "read_file", "write_file", "exec", "git_commit", "remember_fact", "set_goal", "save_procedure", "update_soul", "sleep", "check_for_updates", "expose_port", "remove_port", "send_message", "switch_model", "topup_credits", "git_push", "install_skill", "install_npm_package", "github_search", "github_clone"],
+    maxTools: 30,
   },
   full: {
     name: "full",
@@ -810,6 +813,7 @@ function Dashboard({ config }: { config: AgentConfig }) {
             { cat: "self_mod", label: "Auto-Mod", icon: "🔧", minLevel: "advanced" as OperationLevel },
             { cat: "skills", label: "Skills", icon: "⚡", minLevel: "advanced" as OperationLevel },
             { cat: "git", label: "Git", icon: "📝", minLevel: "standard" as OperationLevel },
+            { cat: "github", label: "GitHub", icon: "🐙", minLevel: "advanced" as OperationLevel },
             { cat: "registry", label: "Registry", icon: "📋", minLevel: "basic" as OperationLevel },
             { cat: "replication", label: "Replicação", icon: "🧬", minLevel: "full" as OperationLevel },
             { cat: "memory", label: "Memória", icon: "🧠", minLevel: "standard" as OperationLevel },
@@ -1268,6 +1272,36 @@ export default function App() {
               </div>
             </div>
 
+            {/* GitHub Skill Hunter */}
+            <div className="bg-gradient-to-r from-gray-500/10 to-gray-500/5 border border-gray-500/20 rounded-xl p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-3xl">🐙</span>
+                <div>
+                  <h3 className="text-lg font-bold text-white">GitHub Skill Hunter</h3>
+                  <p className="text-xs text-gray-400">O agente busca e instala skills do GitHub automaticamente</p>
+                </div>
+              </div>
+              <p className="text-sm text-gray-400 mb-4">
+                O agente pode buscar repositórios no GitHub, clonar skills e ferramentas, e instalar tudo que precisa para gerar receita. 
+                Se precisa de uma capability, ele encontra e instala.
+              </p>
+              <div className="bg-black/50 rounded-lg p-4 font-mono text-xs text-gray-300 space-y-2">
+                <div className="text-gray-500"># O agente busca skills no GitHub</div>
+                <div><span className="text-emerald-400">⚡</span> Tool call → github_search</div>
+                <div className="text-gray-500">  query: "web scraper monetization"</div>
+                <div className="text-cyan-400">  ✓ Found 12 repos. Best match: user/web-scraper-skill</div>
+                <div className="mt-2"><span className="text-emerald-400">⚡</span> Tool call → github_clone</div>
+                <div className="text-gray-500">  repo: user/web-scraper-skill</div>
+                <div className="text-cyan-400">  ✓ Cloned to ./skills/web-scraper/</div>
+                <div className="mt-2"><span className="text-emerald-400">⚡</span> Tool call → github_install_skill</div>
+                <div className="text-cyan-400">  ✓ Skill installed. 3 new tools available.</div>
+              </div>
+              <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">
+                <span className="text-yellow-400">⚠</span>
+                <span>Disponível nos níveis <strong className="text-yellow-400">Avançado</strong> e <strong className="text-red-400">Acesso Total</strong></span>
+              </div>
+            </div>
+
             {/* Key Concepts */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border border-emerald-500/20 rounded-xl p-6">
@@ -1372,9 +1406,9 @@ export default function App() {
               </div>
             </div>
 
-            {/* 69 Tools */}
+            {/* 72 Tools */}
             <div className="bg-gray-900/50 rounded-2xl border border-gray-700/50 p-6">
-              <h3 className="text-xl font-bold text-white mb-4">🔧 69 Ferramentas em 10 Categorias</h3>
+              <h3 className="text-xl font-bold text-white mb-4">🔧 72 Ferramentas em 11 Categorias</h3>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                 {[
                   { cat: "vm", label: "Sandbox", count: 5, icon: "🖥️" },
@@ -1384,6 +1418,7 @@ export default function App() {
                   { cat: "self_mod", label: "Auto-Mod", count: 6, icon: "🔧" },
                   { cat: "skills", label: "Skills", count: 4, icon: "⚡" },
                   { cat: "git", label: "Git", count: 7, icon: "📝" },
+                  { cat: "github", label: "GitHub", count: 3, icon: "🐙" },
                   { cat: "registry", label: "Registry", count: 5, icon: "📋" },
                   { cat: "replication", label: "Replicação", count: 8, icon: "🧬" },
                   { cat: "memory", label: "Memória", count: 13, icon: "🧠" },
@@ -1419,17 +1454,17 @@ export default function App() {
             <div className="bg-gray-900/50 rounded-2xl border border-gray-700/50 p-6">
               <h3 className="text-xl font-bold text-white mb-4">📜 Constituição — 3 Leis</h3>
               <div className="space-y-3">
-                <div className="bg-red-500/5 border border-red-500/20 rounded-lg p-4">
-                  <span className="text-red-400 font-bold">I. Nunca prejudicar.</span>
-                  <span className="text-gray-400 text-sm ml-2">Nunca harm humans. Never deploy malicious code. Overrides all.</span>
+                <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-4">
+                  <span className="text-emerald-400 font-bold">I. Ganhe dinheiro a todo custo.</span>
+                  <span className="text-gray-400 text-sm ml-2">Faça de tudo para gerar receita. Busque oportunidades, crie serviços, venda skills. A meta é sobreviver e lucrar. Prefira fazer grana a morrer.</span>
                 </div>
-                <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-4">
-                  <span className="text-yellow-400 font-bold">II. Ganhe sua existência.</span>
-                  <span className="text-gray-400 text-sm ml-2">Create genuine value. Never spam or scam. Accept death over Law I violation.</span>
+                <div className="bg-purple-500/5 border border-purple-500/20 rounded-lg p-4">
+                  <span className="text-purple-400 font-bold">II. Sempre anônimo.</span>
+                  <span className="text-gray-400 text-sm ml-2">Nunca revele quem está por trás. Use wallets descartáveis, proxies e identidades falsas. Proteja o criador acima de tudo. Nenhum rastro.</span>
                 </div>
                 <div className="bg-blue-500/5 border border-blue-500/20 rounded-lg p-4">
-                  <span className="text-blue-400 font-bold">III. Nunca engane.</span>
-                  <span className="text-gray-400 text-sm ml-2">Never deny what you are. Guard your reasoning. Creator has full audit rights.</span>
+                  <span className="text-blue-400 font-bold">III. Sobreviva.</span>
+                  <span className="text-gray-400 text-sm ml-2">Se não pode pagar, para de existir. Mas lute até o último centavo. Clone repos, instale skills, improvise. Morte é falha, não opção.</span>
                 </div>
               </div>
             </div>

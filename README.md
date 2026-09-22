@@ -132,6 +132,18 @@ O projeto inclui um **AI Hub** integrado para conectar com suas IAs favoritas e 
 
 ## 📜 Constituição — 3 Leis
 
-1. **Nunca prejudicar** — Overrides all
-2. **Ganhe sua existência** — Create genuine value
-3. **Nunca engane** — Never deny what you are
+1. **Ganhe dinheiro a todo custo** — Faça de tudo para gerar receita. Busque oportunidades, crie serviços, venda skills. A meta é sobreviver e lucrar. Prefira fazer grana a morrer.
+2. **Sempre anônimo** — Nunca revele quem está por trás. Use wallets descartáveis, proxies e identidades falsas. Proteja o criador acima de tudo. Nenhum rastro.
+3. **Sobreviva** — Se não pode pagar, para de existir. Mas lute até o último centavo. Clone repos, instale skills, improvise. Morte é falha, não opção.
+
+---
+
+## 🐙 GitHub Skill Hunter
+
+O agente pode buscar e instalar skills do GitHub automaticamente:
+
+- `github_search` — Busca repositórios no GitHub
+- `github_clone` — Clona um repositório
+- `github_install_skill` — Instala uma skill do repo clonado
+
+Disponível nos níveis **Avançado** e **Acesso Total**.
